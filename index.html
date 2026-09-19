@@ -1,0 +1,2668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<!-- 브라우저 자동번역이 한국어 메뉴("카페" 등)를 엉뚱한 말로 오역하는 사고가 실제로
+     발생해서(2026-08-18 사용자 제보) 번역 제안 자체를 막는다. -->
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="ko">
+<title>업종별 영어 대화 지도</title>
+<style>
+  :root {
+    --primary: #2E6FF2;
+    --primary-dark: #1E4FBF;
+    --bg: #F5F7FA;
+    --card: #FFFFFF;
+    --ink: #1B2430;
+    --sub: #6B7684;
+    --line: #E4E8EE;
+    --accent: #FF8A3D;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  /* ---------- Layout: mobile = stacked column, desktop = sidebar + map ---------- */
+  .layout {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    min-height: 100dvh; /* 모바일 주소창·내비게이션을 뺀 실제 화면 높이 */
+    background: var(--card);
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar { display: flex; flex-direction: column; }
+
+  @media (min-width: 900px) {
+    .layout { max-width: none; margin: 0; height: 100vh; height: 100dvh; flex-direction: row; overflow: hidden; }
+    .sidebar { width: 380px; flex: none; height: 100%; overflow-y: auto; border-right: 1px solid var(--line); }
+    #map-wrap { flex: 1; height: 100%; min-height: auto; }
+  }
+
+  header {
+    background: var(--primary);
+    color: #fff;
+    padding: 14px 18px 10px;
+  }
+  .title-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: nowrap; }
+  .title-left { font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .title-right { font-size: 12.5px; opacity: 0.9; white-space: nowrap; flex: none; }
+  @media (max-width: 380px) {
+    .title-left { font-size: 14px; }
+    .title-right { font-size: 10.5px; }
+  }
+  .subtitle { display: none; font-size: 12.5px; opacity: 0.9; margin-top: 4px; }
+  @media (min-width: 900px) {
+    .subtitle { display: block; }
+    .title-left { font-size: 14px; }
+    .title-right { font-size: 10.5px; }
+  }
+
+  .category-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+  }
+  .cat-row { display: flex; gap: 8px; overflow-x: auto; flex: 1; min-width: 0; }
+  .cat-chip {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--sub);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .cat-chip.active { border-color: var(--primary); color: var(--primary); background: #EEF3FF; }
+
+  .cat-more-btn {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--sub);
+    cursor: pointer;
+  }
+  .cat-more-btn .cat-ic { font-size: 16px; line-height: 1; }
+  .cat-more-btn.open { border-color: var(--primary); color: var(--primary); background: #EEF3FF; }
+
+  .cat-panel {
+    max-height: 0;
+    overflow: hidden;
+    border-bottom: 0 solid var(--line);
+    background: var(--card);
+    transition: max-height 0.2s ease;
+    flex-shrink: 0;
+  }
+  .cat-panel.open { max-height: 400px; border-bottom-width: 1px; overflow-y: auto; }
+
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 12px 8px; }
+  .cat-grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 2px;
+    border-radius: 12px;
+    border: none;
+    background: none;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .cat-grid-ic {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    font-size: 17px;
+  }
+  .cat-grid-item.active .cat-grid-ic { border-color: var(--primary); background: #EEF3FF; }
+  .cat-grid-item.active { color: var(--primary); }
+  .cat-grid-item:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* 검색·내위치·지도·위성을 한 줄에: 지도 위에 떠다니는 컨트롤 대신 항상 보이는 툴바 */
+  .toolbar-wrap { position: relative; border-bottom: 1px solid var(--line); }
+  .toolbar { display: flex; gap: 6px; padding: 8px 14px; }
+  .tool-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 7px 2px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--sub);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .tool-btn .ic { font-size: 15px; }
+  .tool-btn.active { border-color: var(--primary); color: var(--primary); background: #EEF3FF; }
+
+  .region-search {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 14px;
+    right: 14px;
+    margin-top: 6px;
+    gap: 8px;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+    z-index: 6;
+  }
+  .region-search.open { display: flex; }
+  .region-search input {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13.5px;
+    font-family: inherit;
+  }
+  .region-search button {
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 10px;
+    padding: 0 14px;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  .results-list { display: none; }
+  .result-item { padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .result-item:hover { background: #FAFBFD; }
+  .result-name { font-size: 13.5px; font-weight: 700; }
+  .result-addr { font-size: 11.5px; color: var(--sub); margin-top: 2px; }
+  @media (min-width: 900px) {
+    .results-list { display: block; flex: 1; }
+  }
+
+  #map-wrap { position: relative; flex: 1; min-height: 340px; }
+  #map { position: absolute; inset: 0; }
+
+  .map-hint {
+    padding: 8px 14px;
+    font-size: 12.5px;
+    color: var(--sub);
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .map-hint-help { color: #9AA3AF; }
+
+  .lib-legend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 7px 14px;
+    font-size: 11.5px;
+    color: var(--sub);
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .legend-dot.on { background: #16A34A; }
+  .legend-dot.off { background: #9CA3AF; }
+  .result-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .result-dot.on { background: #16A34A; }
+  .result-dot.off { background: #9CA3AF; }
+
+  /* ---------- Bottom sheet ---------- */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,26,34,0.45);
+    z-index: 20;
+    display: none;
+  }
+  .sheet-overlay.open { display: block; }
+  .sheet {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translate(-50%, 100%);
+    width: 100%;
+    max-width: 480px;
+    max-height: 82vh;
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    z-index: 21;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.28s ease;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.18);
+  }
+  .sheet.open { transform: translate(-50%, 0); }
+  .sheet-handle { width: 40px; height: 4px; background: var(--line); border-radius: 2px; margin: 10px auto 6px; flex: none; }
+  .sheet-head { padding: 4px 18px 12px; border-bottom: 1px solid var(--line); flex: none; }
+  .sheet-place-name { font-size: 16.5px; font-weight: 800; }
+  .sheet-place-addr { font-size: 12.5px; color: var(--sub); margin-top: 3px; }
+  .sheet-close { position: absolute; right: 14px; top: 14px; background: none; border: none; font-size: 20px; color: var(--sub); cursor: pointer; }
+
+  .sheet-tabs { display: flex; border-bottom: 1px solid var(--line); flex: none; }
+  .tab-btn {
+    flex: 1;
+    padding: 11px;
+    background: none;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--sub);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .tab-panel { flex: 1; overflow-y: auto; }
+  .tab-panel.hidden { display: none; }
+
+  .direction-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 14px;
+    padding: 12px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  .direction-btn.secondary {
+    margin-top: -6px;
+    background: #fff;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+  }
+
+  .info-row { padding: 0 14px 14px; font-size: 13px; color: var(--sub); }
+
+  .lib-seats { margin: 0 14px 14px; padding: 12px; background: #F5F3FF; border: 1px solid #DCD3FA; border-radius: 12px; }
+  .lib-seats-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: #5B3FC7; }
+  .lib-seat-row { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 6px 0; border-top: 1px solid #E7E1FA; }
+  .lib-seat-row:first-child { border-top: none; }
+  .lib-seat-empty { font-size: 13px; color: var(--sub); }
+  .lib-seat-time { font-size: 11px; color: var(--sub); margin-bottom: 6px; }
+
+  #roadview { width: 100%; height: 280px; background: #eee; }
+  .roadview-empty { display: none; padding: 40px 20px; text-align: center; color: var(--sub); font-size: 13px; }
+  .roadview-empty.show { display: block; }
+
+  .scene-list { padding: 10px 14px 18px; }
+  .scene-item {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .scene-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    cursor: pointer;
+    background: #FAFBFD;
+  }
+  .scene-title-ko { font-size: 14px; font-weight: 700; }
+  .scene-title-en { font-size: 11.5px; color: var(--sub); margin-top: 2px; }
+  .scene-arrow { font-size: 12px; color: var(--sub); transition: transform 0.2s ease; }
+  .scene-item.open .scene-arrow { transform: rotate(180deg); }
+
+  .scene-body { display: none; padding: 4px 14px 14px; }
+  .scene-item.open .scene-body { display: block; }
+
+  .line { display: flex; gap: 8px; margin-bottom: 10px; }
+  .line .who {
+    flex: none;
+    width: 44px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 4px 0;
+    height: fit-content;
+  }
+  .line.clerk .who { background: var(--primary); }
+  .line.customer .who { background: var(--accent); }
+  .line .bubble { flex: 1; }
+  .line .en-row { display: flex; align-items: center; gap: 6px; }
+  .line .en { font-size: 14px; font-weight: 700; line-height: 1.4; }
+  .speak-btn {
+    flex: none;
+    border: none;
+    background: #EEF2FF;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 13px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .speak-btn:active { transform: scale(0.92); }
+  .line .pron { font-size: 12.5px; color: var(--primary); margin-top: 2px; line-height: 1.4; }
+  .line .ko { font-size: 12.5px; color: var(--sub); margin-top: 2px; line-height: 1.4; }
+
+  .translate-overlay { position: fixed; inset: 0; background: rgba(20,26,34,0.45); z-index: 30; display: none; }
+  .translate-overlay.open { display: block; }
+  .translate-modal {
+    position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: calc(100% - 32px); max-width: 420px;
+    background: var(--card); border-radius: 18px; padding: 18px;
+    z-index: 31; display: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  }
+  .translate-modal.open { display: block; }
+  .translate-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .translate-title { font-size: 16px; font-weight: 800; }
+  .translate-close { border: none; background: none; font-size: 18px; cursor: pointer; color: var(--sub); padding: 4px; }
+  .translate-input-wrap { position: relative; }
+  .translate-input {
+    width: 100%; min-height: 70px; border: 1.5px solid var(--line); border-radius: 10px;
+    padding: 10px; padding-right: 44px; font-size: 14px; font-family: inherit; resize: vertical;
+  }
+  .translate-mic-btn {
+    position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px;
+    border-radius: 50%; border: none; background: #EEF2FF; color: var(--primary);
+    font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .translate-mic-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .translate-mic-btn.listening { background: #FFEAEA; color: #D14343; animation: translateMicPulse 1s ease-in-out infinite; }
+  @keyframes translateMicPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .translate-mic-hint { font-size: 11.5px; color: var(--sub); margin-top: 6px; }
+  .translate-mic-hint.error { color: #D14343; }
+  .translate-lang-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .translate-lang-field { flex: 1; min-width: 0; }
+  .translate-lang-field label { display: block; font-size: 11px; color: var(--sub); margin-bottom: 3px; }
+  .translate-lang-field select {
+    width: 100%; border: 1.5px solid var(--line); border-radius: 10px;
+    padding: 8px 6px; font-size: 12.5px; font-family: inherit; color: var(--ink); background: #fff;
+  }
+  .translate-go-btn {
+    margin-top: 10px; width: 100%; background: var(--primary); color: #fff; border: none;
+    border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .translate-go-btn:disabled { opacity: 0.6; cursor: default; }
+  .translate-result { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .translate-block + .translate-block { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .translate-ko-label { font-size: 11px; color: var(--sub); margin-bottom: 4px; }
+  .translate-block .ko { font-size: 15px; font-weight: 700; }
+  .translate-block .ko.failed, .translate-block .en.failed { font-size: 12.5px; font-weight: 500; color: #D14343; }
+  .translate-note { font-size: 11px; color: var(--sub); margin-top: 8px; }
+  .translate-error { font-size: 13px; color: #D14343; margin-top: 10px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="layout" id="layout">
+  <aside class="sidebar">
+    <header>
+      <div class="title-row">
+        <span class="title-left">다(多)함께 통(通)하는 아산</span>
+        <span class="title-right">유관기관 다국어 이용안내</span>
+      </div>
+      <div class="subtitle">지도에서 가게를 선택하면, 그 자리에서 쓸 수 있는 영어 대화가 나옵니다</div>
+    </header>
+
+    <div class="category-bar" id="categoryBar">
+      <div class="cat-row" id="catRow">
+        <button class="cat-chip active" data-cat="SPT">🏟️ 체육시설</button>
+        <button class="cat-chip" data-cat="HLC">🩺 보건소</button>
+        <button class="cat-chip" data-cat="GOV">🏛️ 행정복지센터</button>
+        <button class="cat-chip" data-cat="FAM">👨‍👩‍👧 아산가족센터</button>
+        <button class="cat-chip" data-cat="CT1">🎭 문화시설</button>
+        <button class="cat-chip" data-cat="LIB">📚 도서관</button>
+        <button class="cat-chip" data-cat="SCI">🔭 과학관·곤충원</button>
+        <button class="cat-chip" data-cat="YTH">🎨 청소년문화센터</button>
+        <button class="cat-chip" data-cat="JOB">💼 여성새일센터</button>
+        <button class="cat-chip" data-cat="CHD">🍼 육아종합지원센터</button>
+        <button class="cat-chip" data-cat="AGR">🌾 농업기술센터</button>
+        <button class="cat-chip" data-cat="EDU">🎓 평생학습관</button>
+        <button class="cat-chip" data-cat="AT4">🏞️ 관광시설</button>
+        <button class="cat-chip" data-cat="HP8">🏥 병원</button>
+        <button class="cat-chip" data-cat="PM9">💊 약국</button>
+        <button class="cat-chip" data-cat="TRN">🚉 교통시설</button>
+      </div>
+      <button class="cat-more-btn" id="catMoreBtn"><span class="cat-ic">⋯</span><span>주변</span></button>
+    </div>
+    <div class="cat-panel" id="catPanel">
+      <div class="cat-grid" id="catGrid">
+        <button class="cat-grid-item active" data-cat="SPT"><span class="cat-grid-ic">🏟️</span>체육시설</button>
+        <button class="cat-grid-item" data-cat="HLC"><span class="cat-grid-ic">🩺</span>보건소</button>
+        <button class="cat-grid-item" data-cat="GOV"><span class="cat-grid-ic">🏛️</span>행정복지센터</button>
+        <button class="cat-grid-item" data-cat="FAM"><span class="cat-grid-ic">👨‍👩‍👧</span>아산가족센터</button>
+        <button class="cat-grid-item" data-cat="CT1"><span class="cat-grid-ic">🎭</span>문화시설</button>
+        <button class="cat-grid-item" data-cat="LIB"><span class="cat-grid-ic">📚</span>도서관</button>
+        <button class="cat-grid-item" data-cat="SCI"><span class="cat-grid-ic">🔭</span>과학관·곤충원</button>
+        <button class="cat-grid-item" data-cat="YTH"><span class="cat-grid-ic">🎨</span>청소년문화센터</button>
+        <button class="cat-grid-item" data-cat="JOB"><span class="cat-grid-ic">💼</span>여성새일센터</button>
+        <button class="cat-grid-item" data-cat="CHD"><span class="cat-grid-ic">🍼</span>육아종합지원센터</button>
+        <button class="cat-grid-item" data-cat="AGR"><span class="cat-grid-ic">🌾</span>농업기술센터</button>
+        <button class="cat-grid-item" data-cat="EDU"><span class="cat-grid-ic">🎓</span>평생학습관</button>
+        <button class="cat-grid-item" data-cat="AT4"><span class="cat-grid-ic">🏞️</span>관광시설</button>
+        <button class="cat-grid-item" data-cat="HP8"><span class="cat-grid-ic">🏥</span>병원</button>
+        <button class="cat-grid-item" data-cat="PM9"><span class="cat-grid-ic">💊</span>약국</button>
+        <button class="cat-grid-item" data-cat="TRN"><span class="cat-grid-ic">🚉</span>교통시설</button>
+      </div>
+    </div>
+
+    <div class="toolbar-wrap">
+      <div class="toolbar">
+        <button class="tool-btn" id="searchToggleBtn" title="지역 검색"><span class="ic">🔍</span><span>검색</span></button>
+        <button class="tool-btn" id="locateBtn" title="내 위치로 이동"><span class="ic">📍</span><span>내위치</span></button>
+        <button class="tool-btn active" id="roadmapBtn" title="일반 지도"><span class="ic">🗺️</span><span>지도</span></button>
+        <button class="tool-btn" id="skyviewBtn" title="위성 지도"><span class="ic">🛰️</span><span>위성</span></button>
+        <button class="tool-btn" id="translateToggleBtn" title="즉석 번역"><span class="ic">💬</span><span>번역</span></button>
+      </div>
+      <div class="region-search" id="regionSearchBox">
+        <input type="text" id="regionInput" placeholder="지역·주소 검색 (예: 아산시청)">
+        <button id="regionSearchBtn">검색</button>
+      </div>
+    </div>
+
+    <div class="map-hint">
+      <span id="mapHintText">현재 위치 주변 체육시설을 찾고 있습니다…</span>
+      <span class="map-hint-help">· 마커 눌러 확인</span>
+    </div>
+
+    <div class="lib-legend hidden" id="libLegend">
+      <span><span class="legend-dot on"></span>좌석 정보 있음</span>
+      <span><span class="legend-dot off"></span>정보 없음</span>
+    </div>
+
+    <div class="results-list" id="resultsList"></div>
+  </aside>
+
+  <div id="map-wrap">
+    <div id="map"></div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sheetOverlay"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <button class="sheet-close" id="sheetClose">✕</button>
+  <div class="sheet-head">
+    <div class="sheet-place-name" id="placeName">체육시설</div>
+    <div class="sheet-place-addr" id="placeAddr"></div>
+  </div>
+
+  <div class="sheet-tabs">
+    <button class="tab-btn active" data-tab="info">정보</button>
+    <button class="tab-btn" data-tab="roadview">로드뷰</button>
+    <button class="tab-btn" data-tab="dialogue">대화</button>
+  </div>
+
+  <div class="tab-panel" id="tab-info">
+    <a class="direction-btn" id="directionBtn" target="_blank" rel="noopener">🧭 길찾기 (카카오맵 앱으로 연결)</a>
+    <a class="direction-btn secondary hidden" id="priceLinkBtn" target="_blank" rel="noopener">⛽ 실시간 유가 보기 (카카오맵)</a>
+    <a class="direction-btn secondary hidden" id="trainingAppBtn" target="_blank" rel="noopener">📖 직원 교육자료 보기</a>
+    <div class="info-row" id="infoPhone"></div>
+    <div class="lib-seats hidden" id="libSeats">
+      <div class="lib-seats-title">📖 실시간 열람실 좌석</div>
+      <div id="libSeatsBody"></div>
+    </div>
+  </div>
+
+  <div class="tab-panel hidden" id="tab-roadview">
+    <div id="roadview"></div>
+    <div class="roadview-empty" id="roadviewEmpty">이 위치는 로드뷰를 제공하지 않습니다.</div>
+  </div>
+
+  <div class="tab-panel hidden" id="tab-dialogue">
+    <div class="scene-list" id="sceneList"></div>
+  </div>
+</div>
+
+<div class="translate-overlay" id="translateOverlay"></div>
+<div class="translate-modal" id="translateModal">
+  <div class="translate-head">
+    <div class="translate-title">즉석 번역</div>
+    <button class="translate-close" id="translateCloseBtn">✕</button>
+  </div>
+  <div class="translate-lang-row">
+    <div class="translate-lang-field">
+      <label for="translateSrcLang">모국어</label>
+      <select id="translateSrcLang">
+        <option value="ko">한국어</option>
+        <option value="en">영어</option>
+        <option value="vi">베트남어</option>
+        <option value="zh">중국어</option>
+        <option value="tl">필리핀어(타갈로그)</option>
+        <option value="th">태국어</option>
+        <option value="mn">몽골어</option>
+        <option value="ru">러시아어</option>
+        <option value="km">캄보디아어</option>
+        <option value="uz">우즈베크어</option>
+        <option value="ne">네팔어</option>
+        <option value="ja">일본어</option>
+      </select>
+    </div>
+    <div class="translate-lang-field">
+      <label for="translateOutMode">변환 결과</label>
+      <select id="translateOutMode">
+        <option value="both">영어+한국어</option>
+        <option value="en">영어만</option>
+        <option value="ko">한국어만</option>
+      </select>
+    </div>
+  </div>
+  <div class="translate-input-wrap">
+    <textarea class="translate-input" id="translateInput" placeholder="하고 싶은 말을 입력하거나 마이크로 말하세요"></textarea>
+    <button type="button" class="translate-mic-btn" id="translateMicBtn" aria-label="마이크로 입력">🎤</button>
+  </div>
+  <div class="translate-mic-hint hidden" id="translateMicHint"></div>
+  <button class="translate-go-btn" id="translateGoBtn">변환하기</button>
+  <div class="translate-result hidden" id="translateResult">
+    <div class="translate-block hidden" id="translateEnBlock">
+      <div class="en-row">
+        <div class="en" id="translateEn"></div>
+        <button type="button" class="speak-btn" id="translateSpeakBtn" aria-label="영어 발음 듣기">🔊</button>
+      </div>
+      <div class="pron" id="translatePron"></div>
+    </div>
+    <div class="translate-block hidden" id="translateKoBlock">
+      <div class="translate-ko-label">한국어</div>
+      <div class="ko" id="translateKo"></div>
+    </div>
+    <div class="translate-note">※ 자동 번역·자동 발음이라 정확하지 않을 수 있어요. 미리 준비된 대화(정보/대화 탭)가 더 정확합니다.</div>
+  </div>
+  <div class="translate-error hidden" id="translateError"></div>
+</div>
+
+<script>
+/* 유관기관 창구에서 자주 쓰는 상황별 한/영 대화. 기관이 늘어나면 이 구조를 그대로 복제해서 새 카테고리 코드를 넣으면 됩니다. */
+const SCENES = {
+  // 체육시설(복합스포츠센터) 실제 대화 시나리오 17개 — 아산시유관기관교육어플/
+  // sports_app_bilingual.html의 LANG_DATA.en.dial 원본을 그대로 옮겼다(각 상황의 첫 번째
+  // 대화 변형 사용, pron은 이 세션에서 새로 표기). 같은 카테고리에 함께 뜨는 이순신종합운동장·
+  // 둔포국민체육센터 등 나머지 9개 체육시설은 전용 시나리오 없이 Kakao 기본 정보만 노출된다.
+  SPT: [
+    {
+      titleKo: "운영시간 / 휴관일",
+      titleEn: "Operating hours",
+      lines: [
+        { who: "customer", en: "Hi. What time do you open?", pron: "하이. 왓 타임 두 유 오픈?", ko: "안녕하세요. 몇 시에 여나요?" },
+        { who: "clerk", en: "We open at 6 AM.", pron: "위 오픈 앳 식스 에이엠.", ko: "오전 6시에 엽니다." },
+        { who: "customer", en: "And what time do you close?", pron: "앤 왓 타임 두 유 클로즈?", ko: "그럼 몇 시에 닫나요?" },
+        { who: "clerk", en: "We close at 10 PM.", pron: "위 클로즈 앳 텐 피엠.", ko: "밤 10시에 닫습니다." }
+      ]
+    },
+    {
+      titleKo: "시설 위치 안내",
+      titleEn: "Facility location",
+      lines: [
+        { who: "customer", en: "Where is the table tennis room?", pron: "웨어 이즈 더 테이블 테니스 룸?", ko: "탁구장이 어디인가요?" },
+        { who: "clerk", en: "It is on the first floor.", pron: "잇 이즈 온 더 퍼스트 플로어.", ko: "1층에 있습니다." },
+        { who: "customer", en: "Is it near here?", pron: "이즈 잇 니어 히어?", ko: "여기서 가깝나요?" },
+        { who: "clerk", en: "Yes. Just go straight. It is right there.", pron: "예스. 저스트 고 스트레이트. 잇 이즈 라잇 데어.", ko: "네. 똑바로 가세요. 바로 저기예요." }
+      ]
+    },
+    {
+      titleKo: "대관 신청",
+      titleEn: "Court rental request",
+      lines: [
+        { who: "customer", en: "I want to rent a court for my club.", pron: "아이 원트 투 렌트 어 코트 포 마이 클럽.", ko: "동호회 때문에 코트를 대관하고 싶어요." },
+        { who: "clerk", en: "Sure. Which court do you need?", pron: "슈어. 위치 코트 두 유 니드?", ko: "네. 어떤 코트가 필요하세요?" },
+        { who: "customer", en: "The badminton court, please.", pron: "더 배드민턴 코트, 플리즈.", ko: "배드민턴 코트요." },
+        { who: "clerk", en: "Okay. Please apply 20 days before.", pron: "오케이. 플리즈 어플라이 트웬티 데이즈 비포어.", ko: "네. 20일 전에 신청해 주세요." }
+      ]
+    },
+    {
+      titleKo: "빙상장 이용",
+      titleEn: "Using the ice rink",
+      lines: [
+        { who: "customer", en: "How much is the entry fee?", pron: "하우 머치 이즈 디 엔트리 피?", ko: "입장료가 얼마인가요?" },
+        { who: "clerk", en: "3,000 won for adults.", pron: "쓰리 사우전드 원 포 어덜츠.", ko: "성인은 3,000원입니다." },
+        { who: "customer", en: "Do I pay here?", pron: "두 아이 페이 히어?", ko: "여기서 내나요?" },
+        { who: "clerk", en: "Yes. Cash or card is fine.", pron: "예스. 캐시 오어 카드 이즈 파인.", ko: "네. 현금이나 카드 둘 다 됩니다." }
+      ]
+    },
+    {
+      titleKo: "탁구장 이용안내",
+      titleEn: "Using the table tennis room",
+      lines: [
+        { who: "customer", en: "Where is the table tennis room?", pron: "웨어 이즈 더 테이블 테니스 룸?", ko: "탁구장이 어디인가요?" },
+        { who: "clerk", en: "First floor. Right over there.", pron: "퍼스트 플로어. 라잇 오버 데어.", ko: "1층입니다. 바로 저쪽이에요." },
+        { who: "customer", en: "Same floor as here?", pron: "세임 플로어 애즈 히어?", ko: "여기랑 같은 층인가요?" },
+        { who: "clerk", en: "Yes. Just walk straight.", pron: "예스. 저스트 워크 스트레이트.", ko: "네. 똑바로 가시면 됩니다." }
+      ]
+    },
+    {
+      titleKo: "스쿼시장 이용안내",
+      titleEn: "Using the squash court",
+      lines: [
+        { who: "customer", en: "Where is the squash court?", pron: "웨어 이즈 더 스쿼시 코트?", ko: "스쿼시장이 어디인가요?" },
+        { who: "clerk", en: "First floor, next to the table tennis room.", pron: "퍼스트 플로어, 넥스트 투 더 테이블 테니스 룸.", ko: "1층, 탁구장 옆입니다." },
+        { who: "customer", en: "Can I just walk over?", pron: "캔 아이 저스트 워크 오버?", ko: "그냥 걸어가면 되나요?" },
+        { who: "clerk", en: "Yes. Go straight, then turn right.", pron: "예스. 고 스트레이트, 덴 턴 라잇.", ko: "네. 똑바로 가서 오른쪽으로 도세요." }
+      ]
+    },
+    {
+      titleKo: "배드민턴장 이용안내",
+      titleEn: "Using the badminton court",
+      lines: [
+        { who: "customer", en: "Where can I play badminton?", pron: "웨어 캔 아이 플레이 배드민턴?", ko: "배드민턴은 어디서 할 수 있나요?" },
+        { who: "clerk", en: "On the second floor.", pron: "온 더 세컨드 플로어.", ko: "2층입니다." },
+        { who: "customer", en: "How do I go up?", pron: "하우 두 아이 고 업?", ko: "어떻게 올라가나요?" },
+        { who: "clerk", en: "Stairs or elevator. Both work.", pron: "스테어즈 오어 엘리베이터. 보스 워크.", ko: "계단이나 엘리베이터요. 둘 다 됩니다." }
+      ]
+    },
+    {
+      titleKo: "농구장 / 배구장 이용안내",
+      titleEn: "Basketball / volleyball court",
+      lines: [
+        { who: "customer", en: "Where is the basketball court?", pron: "웨어 이즈 더 배스킷볼 코트?", ko: "농구장이 어디인가요?" },
+        { who: "clerk", en: "Second floor. The multi-purpose gym.", pron: "세컨드 플로어. 더 멀티 퍼포즈 짐.", ko: "2층, 다목적 체육관입니다." },
+        { who: "customer", en: "Is volleyball there too?", pron: "이즈 발리볼 데어 투?", ko: "배구도 거기서 하나요?" },
+        { who: "clerk", en: "Yes. Same gym, same court.", pron: "예스. 세임 짐, 세임 코트.", ko: "네. 같은 체육관, 같은 코트입니다." }
+      ]
+    },
+    {
+      titleKo: "탈의실 안내",
+      titleEn: "Locker room",
+      lines: [
+        { who: "customer", en: "Where is the locker room?", pron: "웨어 이즈 더 라커 룸?", ko: "탈의실이 어디인가요?" },
+        { who: "clerk", en: "It is on this floor. Right over there.", pron: "잇 이즈 온 디스 플로어. 라잇 오버 데어.", ko: "이 층에 있어요. 바로 저쪽이에요." },
+        { who: "customer", en: "Which way is the men's room?", pron: "위치 웨이 이즈 더 멘즈 룸?", ko: "남자 탈의실은 어느 쪽인가요?" },
+        { who: "clerk", en: "Men is on the left. Women is on the right.", pron: "멘 이즈 온 더 레프트. 위민 이즈 온 더 라잇.", ko: "남자는 왼쪽, 여자는 오른쪽입니다." }
+      ]
+    },
+    {
+      titleKo: "샤워장 안내",
+      titleEn: "Shower room",
+      lines: [
+        { who: "customer", en: "Is there a shower room?", pron: "이즈 데어 어 샤워 룸?", ko: "샤워장이 있나요?" },
+        { who: "clerk", en: "Yes. Inside the locker room.", pron: "예스. 인사이드 더 라커 룸.", ko: "네. 탈의실 안에 있습니다." },
+        { who: "customer", en: "On the same floor?", pron: "온 더 세임 플로어?", ko: "같은 층인가요?" },
+        { who: "clerk", en: "Yes. Same floor, same room.", pron: "예스. 세임 플로어, 세임 룸.", ko: "네. 같은 층, 같은 공간이에요." }
+      ]
+    },
+    {
+      titleKo: "화장실 안내",
+      titleEn: "Restroom",
+      lines: [
+        { who: "customer", en: "Where is the restroom?", pron: "웨어 이즈 더 레스트룸?", ko: "화장실이 어디인가요?" },
+        { who: "clerk", en: "Right over there, on this floor.", pron: "라잇 오버 데어, 온 디스 플로어.", ko: "바로 저쪽, 이 층에 있어요." },
+        { who: "customer", en: "Which side?", pron: "위치 사이드?", ko: "어느 쪽이요?" },
+        { who: "clerk", en: "Go straight, then turn left.", pron: "고 스트레이트, 덴 턴 레프트.", ko: "똑바로 가서 왼쪽으로 가세요." }
+      ]
+    },
+    {
+      titleKo: "분실물 / 도난 신고",
+      titleEn: "Lost and found",
+      lines: [
+        { who: "customer", en: "I lost my phone.", pron: "아이 로스트 마이 폰.", ko: "휴대폰을 잃어버렸어요." },
+        { who: "clerk", en: "I am sorry. When did you lose it?", pron: "아임 쏘리. 웬 디쥬 루즈 잇?", ko: "유감입니다. 언제 잃어버리셨어요?" },
+        { who: "customer", en: "About one hour ago.", pron: "어바웃 원 아워 어고.", ko: "약 1시간 전쯤이요." },
+        { who: "clerk", en: "Let me check our lost and found.", pron: "렛 미 첵 아워 로스트 앤 파운드.", ko: "분실물함을 확인해 보겠습니다." }
+      ]
+    },
+    {
+      titleKo: "주차장 안내",
+      titleEn: "Parking lot",
+      lines: [
+        { who: "customer", en: "Where is the parking lot?", pron: "웨어 이즈 더 파킹 랏?", ko: "주차장이 어디인가요?" },
+        { who: "clerk", en: "Right next to this building.", pron: "라잇 넥스트 투 디스 빌딩.", ko: "이 건물 바로 옆에 있어요." },
+        { who: "customer", en: "Outdoor or indoor?", pron: "아웃도어 오어 인도어?", ko: "실외인가요, 실내인가요?" },
+        { who: "clerk", en: "Outdoor parking lot.", pron: "아웃도어 파킹 랏.", ko: "야외 주차장입니다." }
+      ]
+    },
+    {
+      titleKo: "렌탈 장비 안내",
+      titleEn: "Equipment rental",
+      lines: [
+        { who: "customer", en: "What equipment can I rent?", pron: "왓 이큅먼트 캔 아이 렌트?", ko: "어떤 장비를 빌릴 수 있나요?" },
+        { who: "clerk", en: "Skates, paddles, and rackets.", pron: "스케이츠, 패들즈, 앤 라켓츠.", ko: "스케이트, 라켓 등을 빌릴 수 있어요." },
+        { who: "customer", en: "Where do I rent them?", pron: "웨어 두 아이 렌트 뎀?", ko: "어디서 빌리나요?" },
+        { who: "clerk", en: "At each sports area.", pron: "앳 이치 스포츠 에어리어.", ko: "각 운동 시설에서요." }
+      ]
+    },
+    {
+      titleKo: "이용 금액 종합 안내",
+      titleEn: "Fees overview",
+      lines: [
+        { who: "customer", en: "Is there an entry fee for the center?", pron: "이즈 데어 언 엔트리 피 포 더 센터?", ko: "센터 입장료가 있나요?" },
+        { who: "clerk", en: "No entry fee. The center is free.", pron: "노 엔트리 피. 더 센터 이즈 프리.", ko: "입장료는 없어요. 센터 입장은 무료입니다." },
+        { who: "customer", en: "Do I pay only when I play?", pron: "두 아이 페이 온리 웬 아이 플레이?", ko: "운동할 때만 내나요?" },
+        { who: "clerk", en: "Yes. Each sport has its own price.", pron: "예스. 이치 스포트 해즈 이츠 오운 프라이스.", ko: "네. 종목별로 가격이 다릅니다." }
+      ]
+    },
+    {
+      titleKo: "응급상황 대응",
+      titleEn: "Emergency response",
+      lines: [
+        { who: "customer", en: "Someone is hurt!", pron: "썸원 이즈 헛!", ko: "다친 사람이 있어요!" },
+        { who: "clerk", en: "Where? What happened?", pron: "웨어? 왓 해픈드?", ko: "어디예요? 무슨 일이에요?" },
+        { who: "customer", en: "On the ice. He fell down.", pron: "온 디 아이스. 히 펠 다운.", ko: "빙상장에서요. 넘어졌어요." },
+        { who: "clerk", en: "I am calling for help now.", pron: "아임 콜링 포 헬프 나우.", ko: "지금 도움을 부르겠습니다." }
+      ]
+    },
+    {
+      titleKo: "길찾기 / 대중교통",
+      titleEn: "Directions and transit",
+      lines: [
+        { who: "customer", en: "Where is the bus stop?", pron: "웨어 이즈 더 버스 스탑?", ko: "버스 정류장이 어디인가요?" },
+        { who: "clerk", en: "Just outside the main gate.", pron: "저스트 아웃사이드 더 메인 게이트.", ko: "정문 바로 밖에 있어요." },
+        { who: "customer", en: "Which direction?", pron: "위치 디렉션?", ko: "어느 방향이요?" },
+        { who: "clerk", en: "Turn right after you exit.", pron: "턴 라잇 애프터 유 익싯.", ko: "나가셔서 오른쪽으로 도세요." }
+      ]
+    }
+  ],
+  HLC: [
+    {
+      titleKo: "예방접종 문의",
+      titleEn: "Asking about a vaccination",
+      lines: [
+        { who: "customer", en: "I'd like to get a flu vaccination. Is this the right place?", pron: "아이드 라이크 투 겟 어 플루 백시네이션. 이즈 디스 더 라잇 플레이스?", ko: "독감 예방접종을 하고 싶은데, 여기가 맞나요?" },
+        { who: "clerk", en: "Yes, please take a number and wait to be called.", pron: "예스, 플리즈 테이크 어 넘버 앤 웨이트 투 비 콜드.", ko: "네, 번호표 뽑고 기다려 주세요." }
+      ]
+    },
+    {
+      titleKo: "건강검진 예약 문의",
+      titleEn: "Booking a health checkup",
+      lines: [
+        { who: "customer", en: "Can I make an appointment for a health checkup here?", pron: "캔 아이 메이크 언 어포인트먼트 포 어 헬스 첵업 히어?", ko: "여기서 건강검진 예약할 수 있나요?" },
+        { who: "clerk", en: "Yes, please fill out this form first.", pron: "예스, 플리즈 필 아웃 디스 폼 퍼스트.", ko: "네, 먼저 이 신청서를 작성해 주세요." }
+      ]
+    },
+    {
+      titleKo: "진료 접수",
+      titleEn: "Registering to see a doctor",
+      lines: [
+        { who: "customer", en: "I'd like to see a doctor today.", pron: "아이드 라이크 투 씨 어 닥터 투데이.", ko: "오늘 진료를 받고 싶어요." },
+        { who: "clerk", en: "Please write your name here and wait for your turn.", pron: "플리즈 라이트 유어 네임 히어 앤 웨이트 포 유어 턴.", ko: "여기에 이름을 적고 순서를 기다려 주세요." }
+      ]
+    },
+    {
+      titleKo: "증명서 발급 문의",
+      titleEn: "Asking about a certificate",
+      lines: [
+        { who: "customer", en: "Can I get a vaccination certificate here?", pron: "캔 아이 겟 어 백시네이션 서티피킷 히어?", ko: "여기서 예방접종 증명서를 뗄 수 있나요?" },
+        { who: "clerk", en: "Yes, please go to window 2 for certificates.", pron: "예스, 플리즈 고 투 윈도우 투 포 서티피킷츠.", ko: "네, 증명서는 2번 창구로 가시면 됩니다." }
+      ]
+    }
+  ],
+  GOV: [
+    {
+      titleKo: "운영시간 문의",
+      titleEn: "Asking operating hours",
+      lines: [
+        { who: "customer", en: "What time do you open today?", pron: "왓 타임 두 유 오픈 투데이?", ko: "오늘 몇 시에 여나요?" },
+        { who: "clerk", en: "We're open from 9 AM to 6 PM on weekdays.", pron: "위아 오픈 프롬 나인 에이엠 투 씩스 피엠 온 위크데이즈.", ko: "평일 오전 9시부터 오후 6시까지 운영해요." }
+      ]
+    },
+    {
+      titleKo: "위치·주차 안내",
+      titleEn: "Asking for directions and parking",
+      lines: [
+        { who: "customer", en: "Is there a parking lot here?", pron: "이즈 데어 어 파킹 랏 히어?", ko: "여기 주차장이 있나요?" },
+        { who: "clerk", en: "Yes, it's right behind the building.", pron: "예스, 잇츠 라잇 비하인드 더 빌딩.", ko: "네, 건물 바로 뒤에 있어요." }
+      ]
+    },
+    {
+      titleKo: "필요 서류 문의",
+      titleEn: "Asking what documents are needed",
+      lines: [
+        { who: "customer", en: "What documents do I need to bring?", pron: "왓 다큐먼츠 두 아이 니드 투 브링?", ko: "어떤 서류를 가져와야 하나요?" },
+        { who: "clerk", en: "You'll need your ID and this application form.", pron: "유일 니드 유어 아이디 앤 디스 어플리케이션 폼.", ko: "신분증이랑 이 신청서가 필요해요." }
+      ]
+    },
+    {
+      titleKo: "담당자 연결 요청",
+      titleEn: "Asking to speak with a staff member",
+      lines: [
+        { who: "customer", en: "Could I speak with someone in charge of this?", pron: "쿠다이 스피크 위드 썸원 인 차지 오브 디스?", ko: "이거 담당하시는 분과 얘기할 수 있을까요?" },
+        { who: "clerk", en: "Sure, please wait a moment, I'll call them.", pron: "슈어, 플리즈 웨이트 어 모먼트, 아일 콜 뎀.", ko: "네, 잠시만 기다려 주시면 연결해 드릴게요." }
+      ]
+    }
+  ],
+  // 아산가족센터: 실무자 확인 전 플레이스홀더 — 실제 민원 시나리오는 현장 확인 후 채운다.
+  FAM: [
+    {
+      titleKo: "상담 예약 문의",
+      titleEn: "Booking a counseling session",
+      lines: [
+        { who: "customer", en: "I'd like to book a family counseling session.", pron: "아이드 라이크 투 북 어 패밀리 카운슬링 세션.", ko: "가족 상담을 예약하고 싶어요." },
+        { who: "clerk", en: "Sure, what day works for you?", pron: "슈어, 왓 데이 웍스 포 유?", ko: "네, 어느 요일이 편하세요?" }
+      ]
+    },
+    {
+      titleKo: "통번역 서비스 문의",
+      titleEn: "Asking about interpretation services",
+      lines: [
+        { who: "customer", en: "Do you provide interpretation services for multicultural families?", pron: "두 유 프로바이드 인터프리테이션 서비시즈 포 멀티컬처럴 패밀리즈?", ko: "다문화가족을 위한 통번역 서비스가 있나요?" },
+        { who: "clerk", en: "Yes, we have interpreters for several languages.", pron: "예스, 위 해브 인터프리터즈 포 세버럴 랭귀지즈.", ko: "네, 여러 언어로 통역을 도와드릴 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "프로그램 신청",
+      titleEn: "Signing up for a program",
+      lines: [
+        { who: "customer", en: "How can I sign up for the parenting education program?", pron: "하우 캔 아이 사인 업 포 더 페어런팅 에듀케이션 프로그램?", ko: "부모교육 프로그램은 어떻게 신청하나요?" },
+        { who: "clerk", en: "You can apply at the front desk or by phone.", pron: "유 캔 어플라이 앳 더 프론트 데스크 오어 바이 폰.", ko: "안내데스크나 전화로 신청하실 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "전화 문의 안내",
+      titleEn: "Asking about phone inquiries",
+      lines: [
+        { who: "customer", en: "Can I call to ask more questions?", pron: "캔 아이 콜 투 애스크 모어 퀘스천즈?", ko: "전화로 더 물어봐도 될까요?" },
+        { who: "clerk", en: "Yes, please call us anytime during business hours.", pron: "예스, 플리즈 콜 어스 애니타임 듀링 비즈니스 아워즈.", ko: "네, 운영시간 중 언제든 전화 주세요." }
+      ]
+    }
+  ],
+  SCI: [
+    {
+      titleKo: "운영시간 문의",
+      titleEn: "Asking operating hours",
+      lines: [
+        { who: "customer", en: "What time does the science museum open?", pron: "왓 타임 더즈 더 사이언스 뮤지엄 오픈?", ko: "과학관은 몇 시에 여나요?" },
+        { who: "clerk", en: "We're open from 10 AM to 6 PM, Tuesday through Sunday.", pron: "위아 오픈 프롬 텐 에이엠 투 씩스 피엠, 튜즈데이 쓰루 선데이.", ko: "화요일부터 일요일까지 오전 10시부터 오후 6시까지 운영해요." }
+      ]
+    },
+    {
+      titleKo: "휴관일 안내",
+      titleEn: "Closed day notice",
+      lines: [
+        { who: "customer", en: "Is it closed on Mondays?", pron: "이즈 잇 클로즈드 온 먼데이즈?", ko: "월요일에는 쉬나요?" },
+        { who: "clerk", en: "Yes, we're closed every Monday.", pron: "예스, 위아 클로즈드 에브리 먼데이.", ko: "네, 매주 월요일은 휴관이에요." }
+      ]
+    },
+    {
+      titleKo: "생태곤충원 위치 문의",
+      titleEn: "Asking about the insect ecology park",
+      lines: [
+        { who: "customer", en: "Is the insect ecology park close to the science museum?", pron: "이즈 디 인섹트 이콜로지 파크 클로즈 투 더 사이언스 뮤지엄?", ko: "생태곤충원이 과학관이랑 가까운가요?" },
+        { who: "clerk", en: "Yes, they're right next to each other.", pron: "예스, 데이알 라잇 넥스트 투 이치 아더.", ko: "네, 바로 옆에 붙어 있어요." }
+      ]
+    },
+    {
+      titleKo: "전화 문의",
+      titleEn: "Asking for a phone number",
+      lines: [
+        { who: "customer", en: "What's the phone number for the insect ecology park?", pron: "왓츠 더 폰 넘버 포 디 인섹트 이콜로지 파크?", ko: "생태곤충원 전화번호가 어떻게 되나요?" },
+        { who: "clerk", en: "You can call 041-538-1980.", pron: "유 캔 콜 오공사일 오삼팔 일구팔공.", ko: "041-538-1980으로 전화하시면 됩니다." }
+      ]
+    }
+  ],
+  YTH: [
+    {
+      titleKo: "운영시간 문의",
+      titleEn: "Asking operating hours",
+      lines: [
+        { who: "customer", en: "What time do you open?", pron: "왓 타임 두 유 오픈?", ko: "몇 시에 여나요?" },
+        { who: "clerk", en: "We're open from 9 AM to 10 PM, Tuesday to Saturday.", pron: "위아 오픈 프롬 나인 에이엠 투 텐 피엠, 튜즈데이 투 새터데이.", ko: "화요일부터 토요일까지 오전 9시부터 밤 10시까지 운영해요." }
+      ]
+    },
+    {
+      titleKo: "휴무일 안내",
+      titleEn: "Closed day notice",
+      lines: [
+        { who: "customer", en: "Are you open on Sundays?", pron: "아 유 오픈 온 선데이즈?", ko: "일요일에도 여나요?" },
+        { who: "clerk", en: "No, we're closed on Sundays and Mondays.", pron: "노, 위아 클로즈드 온 선데이즈 앤 먼데이즈.", ko: "아니요, 일요일과 월요일은 쉽니다." }
+      ]
+    },
+    {
+      titleKo: "프로그램 문의",
+      titleEn: "Asking about programs",
+      lines: [
+        { who: "customer", en: "What programs do you offer for teenagers?", pron: "왓 프로그램즈 두 유 오퍼 포 틴에이저즈?", ko: "청소년을 위한 프로그램은 어떤 게 있나요?" },
+        { who: "clerk", en: "We have various clubs and activity programs. Please check the notice board.", pron: "위 해브 베리어스 클럽스 앤 액티비티 프로그램즈. 플리즈 첵 더 노티스 보드.", ko: "다양한 동아리와 활동 프로그램이 있어요. 게시판을 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "전화 문의",
+      titleEn: "Asking for a phone number",
+      lines: [
+        { who: "customer", en: "Can I call for more information?", pron: "캔 아이 콜 포 모어 인포메이션?", ko: "전화로 더 물어봐도 되나요?" },
+        { who: "clerk", en: "Yes, please call 041-531-5678.", pron: "예스, 플리즈 콜 오공사일 오삼일 오육칠팔.", ko: "네, 041-531-5678로 전화 주세요." }
+      ]
+    }
+  ],
+  JOB: [
+    {
+      titleKo: "위치 안내",
+      titleEn: "Asking about the location",
+      lines: [
+        { who: "customer", en: "Are the women's job center and the job support center in the same building?", pron: "아 더 위민즈 잡 센터 앤 더 잡 서포트 센터 인 더 세임 빌딩?", ko: "여성새로일하기센터랑 일자리지원센터가 같은 건물에 있나요?" },
+        { who: "clerk", en: "Yes, they're both on the 7th floor of Chungmu Building.", pron: "예스, 데이알 보스 온 더 세븐스 플로어 오브 충무 빌딩.", ko: "네, 둘 다 충무빌딩 7층에 있어요." }
+      ]
+    },
+    {
+      titleKo: "상담 신청",
+      titleEn: "Requesting job counseling",
+      lines: [
+        { who: "customer", en: "I'd like to get job counseling.", pron: "아이드 라이크 투 겟 잡 카운슬링.", ko: "취업 상담을 받고 싶어요." },
+        { who: "clerk", en: "Sure, please fill out this application first.", pron: "슈어, 플리즈 필 아웃 디스 어플리케이션 퍼스트.", ko: "네, 먼저 이 신청서를 작성해 주세요." }
+      ]
+    },
+    {
+      titleKo: "직업교육 문의",
+      titleEn: "Asking about vocational training",
+      lines: [
+        { who: "customer", en: "Do you offer vocational training programs?", pron: "두 유 오퍼 보케이셔널 트레이닝 프로그램즈?", ko: "직업교육 프로그램이 있나요?" },
+        { who: "clerk", en: "Yes, we have several training courses. Let me show you the list.", pron: "예스, 위 해브 세버럴 트레이닝 코시즈. 렛 미 쇼 유 더 리스트.", ko: "네, 여러 교육과정이 있어요. 목록을 보여드릴게요." }
+      ]
+    },
+    {
+      titleKo: "전화 문의",
+      titleEn: "Asking for a phone number",
+      lines: [
+        { who: "customer", en: "Which number should I call for job counseling?", pron: "위치 넘버 슈다이 콜 포 잡 카운슬링?", ko: "취업 상담은 어디로 전화하면 되나요?" },
+        { who: "clerk", en: "Please call 041-570-5530 for the women's center.", pron: "플리즈 콜 오공사일 오칠공 오오삼공 포 더 위민즈 센터.", ko: "여성새로일하기센터는 041-570-5530입니다." }
+      ]
+    }
+  ],
+  CHD: [
+    {
+      titleKo: "이용 등록 문의",
+      titleEn: "Registering to use the center",
+      lines: [
+        { who: "customer", en: "How do I register to use this center?", pron: "하우 두 아이 레지스터 투 유즈 디스 센터?", ko: "여기 이용하려면 어떻게 등록하나요?" },
+        { who: "clerk", en: "Please bring your child's ID and fill out this form.", pron: "플리즈 브링 유어 차일즈 아이디 앤 필 아웃 디스 폼.", ko: "아이 신분증을 가져오시고 이 신청서를 작성해 주세요." }
+      ]
+    },
+    {
+      titleKo: "장난감 대여 문의",
+      titleEn: "Asking about toy rental",
+      lines: [
+        { who: "customer", en: "Can I borrow toys or books here?", pron: "캔 아이 바로우 토이즈 오어 북스 히어?", ko: "여기서 장난감이나 책을 빌릴 수 있나요?" },
+        { who: "clerk", en: "Yes, we have a toy and book lending service.", pron: "예스, 위 해브 어 토이 앤 북 렌딩 서비스.", ko: "네, 장난감과 도서 대여 서비스가 있어요." }
+      ]
+    },
+    {
+      titleKo: "상담 신청",
+      titleEn: "Requesting parenting counseling",
+      lines: [
+        { who: "customer", en: "I'd like to get parenting counseling.", pron: "아이드 라이크 투 겟 페어런팅 카운슬링.", ko: "육아 상담을 받고 싶어요." },
+        { who: "clerk", en: "Sure, would you like to book an appointment?", pron: "슈어, 우쥬 라이크 투 북 언 어포인트먼트?", ko: "네, 예약해 드릴까요?" }
+      ]
+    },
+    {
+      titleKo: "전화 문의",
+      titleEn: "Asking for a phone number",
+      lines: [
+        { who: "customer", en: "What's the phone number here?", pron: "왓츠 더 폰 넘버 히어?", ko: "여기 전화번호가 어떻게 되나요?" },
+        { who: "clerk", en: "You can call 041-533-0756.", pron: "유 캔 콜 오공사일 오오삼삼 오칠오육.", ko: "041-533-0756으로 전화하시면 됩니다." }
+      ]
+    }
+  ],
+  AGR: [
+    {
+      titleKo: "운영일 문의",
+      titleEn: "Asking about operating days",
+      lines: [
+        { who: "customer", en: "Are you open on weekends?", pron: "아 유 오픈 온 위켄즈?", ko: "주말에도 여나요?" },
+        { who: "clerk", en: "No, we're closed on Saturdays and Sundays.", pron: "노, 위아 클로즈드 온 새터데이즈 앤 선데이즈.", ko: "아니요, 토요일과 일요일은 쉽니다." }
+      ]
+    },
+    {
+      titleKo: "교육 프로그램 문의",
+      titleEn: "Asking about farming education",
+      lines: [
+        { who: "customer", en: "Do you offer farming education programs?", pron: "두 유 오퍼 파밍 에듀케이션 프로그램즈?", ko: "농업 교육 프로그램이 있나요?" },
+        { who: "clerk", en: "Yes, please check with the front desk for the schedule.", pron: "예스, 플리즈 첵 위드 더 프론트 데스크 포 더 스케줄.", ko: "네, 일정은 안내데스크에서 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "농업 상담 신청",
+      titleEn: "Requesting agricultural advice",
+      lines: [
+        { who: "customer", en: "I'd like to get advice about growing crops.", pron: "아이드 라이크 투 겟 어드바이스 어바웃 그로잉 크랍스.", ko: "작물 재배에 대해 상담받고 싶어요." },
+        { who: "clerk", en: "Sure, one of our agricultural advisors can help you.", pron: "슈어, 원 오브 아워 애그리컬처럴 어드바이저즈 캔 헬프 유.", ko: "네, 저희 농업 지도사가 도와드릴 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "전화 문의",
+      titleEn: "Asking for a phone number",
+      lines: [
+        { who: "customer", en: "Is there a phone number I can call?", pron: "이즈 데어 어 폰 넘버 아이 캔 콜?", ko: "전화로 문의할 수 있는 번호가 있나요?" },
+        { who: "clerk", en: "Yes, you can call 1422-42.", pron: "예스, 유 캔 콜 원 포 투 투 다시 포투.", ko: "네, 1422-42로 전화하시면 됩니다." }
+      ]
+    }
+  ],
+  EDU: [
+    {
+      titleKo: "강좌 신청 문의",
+      titleEn: "Signing up for a class",
+      lines: [
+        { who: "customer", en: "How can I sign up for a class here?", pron: "하우 캔 아이 사인 업 포 어 클래스 히어?", ko: "여기서 강좌 신청은 어떻게 하나요?" },
+        { who: "clerk", en: "You can apply online or at the front desk.", pron: "유 캔 어플라이 온라인 오어 앳 더 프론트 데스크.", ko: "온라인이나 안내데스크에서 신청하실 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "위치 안내",
+      titleEn: "Asking about the location",
+      lines: [
+        { who: "customer", en: "Is this the main building?", pron: "이즈 디스 더 메인 빌딩?", ko: "여기가 본관인가요?" },
+        { who: "clerk", en: "Yes, this is the main center on Nambu-ro.", pron: "예스, 디스 이즈 더 메인 센터 온 남부로.", ko: "네, 남부로에 있는 본관 맞습니다." }
+      ]
+    },
+    {
+      titleKo: "분원 안내",
+      titleEn: "Asking about a nearby branch",
+      lines: [
+        { who: "customer", en: "Is there a branch closer to my neighborhood?", pron: "이즈 데어 어 브랜치 클로저 투 마이 네이버후드?", ko: "저희 동네에 더 가까운 분원이 있나요?" },
+        { who: "clerk", en: "Yes, most administrative welfare centers have a nearby learning branch.", pron: "예스, 모스트 어드미니스트레이티브 웰페어 센터즈 해브 어 니어바이 러닝 브랜치.", ko: "네, 대부분의 행정복지센터에 가까운 평생학습 분원이 있어요." }
+      ]
+    },
+    {
+      titleKo: "공연장 문의",
+      titleEn: "Asking about the performance hall",
+      lines: [
+        { who: "customer", en: "Is there a performance hall in this building?", pron: "이즈 데어 어 퍼포먼스 홀 인 디스 빌딩?", ko: "이 건물에 공연장이 있나요?" },
+        { who: "clerk", en: "Yes, it's in the same building. You can call 041-537-3904.", pron: "예스, 잇츠 인 더 세임 빌딩. 유 캔 콜 오공사일 오오삼칠 삼구공사.", ko: "네, 같은 건물에 있어요. 041-537-3904로 문의하시면 됩니다." }
+      ]
+    }
+  ],
+  CT1: [
+    {
+      titleKo: "입장권을 구매할 때",
+      titleEn: "Buying an admission ticket",
+      lines: [
+        { who: "customer", en: "One adult ticket, please.", pron: "원 어덜트 티켓, 플리즈.", ko: "성인 한 장 주세요." },
+        { who: "clerk", en: "Sure, that'll be 8,000 won.", pron: "슈어, 댓일 비 에잇 싸우전드 원.", ko: "네, 8,000원입니다." }
+      ]
+    },
+    {
+      titleKo: "할인 여부를 확인할 때",
+      titleEn: "Asking about a discount",
+      lines: [
+        { who: "customer", en: "Is there a student discount?", pron: "이즈 데어 어 스튜던트 디스카운트?", ko: "학생 할인 되나요?" },
+        { who: "clerk", en: "Yes, with a valid student ID.", pron: "예스, 위드 어 밸리드 스튜던트 아이디.", ko: "네, 학생증 있으시면 됩니다." }
+      ]
+    },
+    {
+      titleKo: "관람 시간을 물어볼 때",
+      titleEn: "Asking about opening hours",
+      lines: [
+        { who: "customer", en: "What time do you close today?", pron: "왓 타임 두 유 클로즈 투데이?", ko: "오늘 몇 시에 닫나요?" },
+        { who: "clerk", en: "We close at 6 PM, last entry at 5:30.", pron: "위 클로즈 앳 식스 피엠, 라스트 엔트리 앳 파이브 써티.", ko: "오후 6시 폐관이고, 입장은 5시 30분까지입니다." }
+      ]
+    },
+    {
+      titleKo: "오디오 가이드를 대여할 때",
+      titleEn: "Renting an audio guide",
+      lines: [
+        { who: "customer", en: "Could I rent an audio guide, please?", pron: "쿠다이 렌트 언 오디오 가이드, 플리즈?", ko: "오디오 가이드 대여할 수 있을까요?" },
+        { who: "clerk", en: "Sure, it's 3,000 won. Could I see your ID?", pron: "슈어, 잇츠 쓰리 싸우전드 원. 쿠다이 씨 유어 아이디?", ko: "네, 3,000원입니다. 신분증 좀 보여주시겠어요?" }
+      ]
+    },
+    {
+      titleKo: "사진 촬영 가능 여부를 물어볼 때",
+      titleEn: "Asking if photos are allowed",
+      lines: [
+        { who: "customer", en: "Is it okay to take pictures here?", pron: "이즈 잇 오케이 투 테이크 픽처스 히어?", ko: "여기서 사진 찍어도 되나요?" },
+        { who: "clerk", en: "Yes, but no flash, please.", pron: "예스, 벗 노 플래시, 플리즈.", ko: "네, 플래시만 사용하지 말아주세요." }
+      ]
+    },
+    {
+      titleKo: "짐 보관함을 이용할 때",
+      titleEn: "Using a locker",
+      lines: [
+        { who: "customer", en: "Is there somewhere I can store my bag?", pron: "이즈 데어 섬웨어 아이 캔 스토어 마이 백?", ko: "짐 보관할 수 있는 곳 있나요?" },
+        { who: "clerk", en: "Yes, the lockers are over there, free of charge.", pron: "예스, 더 라커즈 아 오버 데어, 프리 오브 차지.", ko: "네, 저쪽에 무료 보관함이 있습니다." }
+      ]
+    },
+    {
+      titleKo: "전시 설명을 요청할 때",
+      titleEn: "Asking about an exhibit",
+      lines: [
+        { who: "customer", en: "Could you tell me more about this piece?", pron: "쿠쥬 텔 미 모어 어바웃 디스 피스?", ko: "이 작품에 대해 좀 더 설명해주시겠어요?" },
+        { who: "clerk", en: "Sure, it was painted in the 1920s.", pron: "슈어, 잇 워즈 페인티드 인 더 나인틴 트웨니즈.", ko: "네, 1920년대에 그려진 작품입니다." }
+      ]
+    },
+    {
+      titleKo: "기념품샵 위치를 물어볼 때",
+      titleEn: "Asking where the gift shop is",
+      lines: [
+        { who: "customer", en: "Where's the gift shop?", pron: "웨얼즈 더 기프트 샵?", ko: "기념품샵이 어디 있나요?" },
+        { who: "clerk", en: "It's near the main exit.", pron: "잇츠 니어 더 메인 엑싯.", ko: "정문 출구 근처에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "도슨트 투어 시간을 물어볼 때",
+      titleEn: "Asking about a guided tour",
+      lines: [
+        { who: "customer", en: "What time is the next guided tour?", pron: "왓 타임 이즈 더 넥스트 가이디드 투어?", ko: "다음 도슨트 투어가 몇 시예요?" },
+        { who: "clerk", en: "It starts at 2 PM, right by the entrance.", pron: "잇 스타츠 앳 투 피엠, 라잇 바이 디 엔트런스.", ko: "오후 2시에 입구에서 시작합니다." }
+      ]
+    },
+    {
+      titleKo: "휠체어를 대여할 때",
+      titleEn: "Renting a wheelchair",
+      lines: [
+        { who: "customer", en: "Could I rent a wheelchair, please?", pron: "쿠다이 렌트 어 윌체어, 플리즈?", ko: "휠체어 대여할 수 있을까요?" },
+        { who: "clerk", en: "Sure, it's free. Just leave your ID with us.", pron: "슈어, 잇츠 프리. 저스트 리브 유어 아이디 위드 어스.", ko: "네, 무료입니다. 신분증만 맡겨주세요." }
+      ]
+    },
+    {
+      titleKo: "화장실 위치를 물어볼 때",
+      titleEn: "Asking where the restroom is",
+      lines: [
+        { who: "customer", en: "Where's the restroom?", pron: "웨얼즈 더 레스트룸?", ko: "화장실이 어디예요?" },
+        { who: "clerk", en: "It's just around the corner.", pron: "잇츠 저스트 어라운드 더 코너.", ko: "모퉁이 돌면 바로 있습니다." }
+      ]
+    },
+    {
+      titleKo: "다음 공연 시간을 물어볼 때",
+      titleEn: "Asking about the next show",
+      lines: [
+        { who: "customer", en: "When's the next performance?", pron: "웬즈 더 넥스트 퍼포먼스?", ko: "다음 공연이 언제예요?" },
+        { who: "clerk", en: "It starts in 30 minutes, in the main hall.", pron: "잇 스타츠 인 써티 미닛츠, 인 더 메인 홀.", ko: "30분 후에 메인홀에서 시작합니다." }
+      ]
+    },
+    {
+      titleKo: "단체 할인을 문의할 때",
+      titleEn: "Asking about a group discount",
+      lines: [
+        { who: "customer", en: "Do you offer a group discount for 10 or more people?", pron: "두 유 오퍼 어 그룹 디스카운트 포 텐 오어 모어 피플?", ko: "10명 이상이면 단체 할인 되나요?" },
+        { who: "clerk", en: "Yes, that's a 20% discount.", pron: "예스, 댓츠 어 트웬티 퍼센트 디스카운트.", ko: "네, 20% 할인됩니다." }
+      ]
+    },
+    {
+      titleKo: "재입장 가능 여부를 물어볼 때",
+      titleEn: "Asking about re-entry",
+      lines: [
+        { who: "customer", en: "Can I go out and come back in with the same ticket?", pron: "캔 아이 고 아웃 앤 컴 백 인 위드 더 세임 티켓?", ko: "이 표로 나갔다가 다시 들어올 수 있나요?" },
+        { who: "clerk", en: "Yes, just show your ticket at the entrance.", pron: "예스, 저스트 쇼 유어 티켓 앳 디 엔트런스.", ko: "네, 입구에서 표만 보여주시면 됩니다." }
+      ]
+    },
+    {
+      titleKo: "관람을 마치고 나갈 때",
+      titleEn: "Leaving after your visit",
+      lines: [
+        { who: "clerk", en: "I hope you enjoyed the exhibition.", pron: "아이 호프 유 인조이드 디 이그지비션.", ko: "전시 즐겁게 보셨길 바라요." },
+        { who: "customer", en: "Yes, it was wonderful. Thank you.", pron: "예스, 잇 워즈 원더풀. 땡큐.", ko: "네, 정말 좋았어요. 감사합니다." }
+      ]
+    }
+  ],
+  LIB: [
+    {
+      titleKo: "도서관 회원증을 만들 때",
+      titleEn: "Making a library card",
+      lines: [
+        { who: "customer", en: "I'd like to make a library card, please.", pron: "아이드 라이크 투 메이크 어 라이브러리 카드, 플리즈.", ko: "도서관 회원증을 만들고 싶어요." },
+        { who: "clerk", en: "Sure, could I see your ID?", pron: "슈어, 쿠다이 씨 유어 아이디?", ko: "네, 신분증 좀 보여주시겠어요?" }
+      ]
+    },
+    {
+      titleKo: "책을 대출할 때",
+      titleEn: "Checking out a book",
+      lines: [
+        { who: "customer", en: "I'd like to check out these books.", pron: "아이드 라이크 투 체크 아웃 디즈 북스.", ko: "이 책들 대출하고 싶어요." },
+        { who: "clerk", en: "Sure, please scan your card here.", pron: "슈어, 플리즈 스캔 유어 카드 히어.", ko: "네, 여기에 카드를 스캔해주세요." }
+      ]
+    },
+    {
+      titleKo: "반납 기한을 확인할 때",
+      titleEn: "Checking the due date",
+      lines: [
+        { who: "customer", en: "When is this due?", pron: "웬 이즈 디스 듀?", ko: "이거 반납 기한이 언제예요?" },
+        { who: "clerk", en: "It's due in two weeks, on the 22nd.", pron: "잇츠 듀 인 투 윅스, 온 더 트웬티 세컨드.", ko: "2주 후, 22일까지입니다." }
+      ]
+    },
+    {
+      titleKo: "대출 기간을 연장할 때",
+      titleEn: "Renewing a book",
+      lines: [
+        { who: "customer", en: "Can I renew this book?", pron: "캔 아이 리뉴 디스 북?", ko: "이 책 연장할 수 있을까요?" },
+        { who: "clerk", en: "Let me check. Yes, it's been renewed for one more week.", pron: "렛 미 체크. 예스, 잇츠 빈 리뉴드 포 원 모어 윅.", ko: "확인해볼게요. 네, 일주일 더 연장됐습니다." }
+      ]
+    },
+    {
+      titleKo: "책 위치를 물어볼 때",
+      titleEn: "Asking where to find a book",
+      lines: [
+        { who: "customer", en: "Could you tell me where I can find this book?", pron: "쿠쥬 텔 미 웨어 아이 캔 파인드 디스 북?", ko: "이 책 어디서 찾을 수 있는지 알려주시겠어요?" },
+        { who: "clerk", en: "It's on the third floor, in the literature section.", pron: "잇츠 온 더 써드 플로어, 인 더 리터러처 섹션.", ko: "3층 문학 코너에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "예약한 책을 찾으러 왔을 때",
+      titleEn: "Picking up a reserved book",
+      lines: [
+        { who: "customer", en: "I reserved a book online. Is it ready?", pron: "아이 리저브드 어 북 온라인. 이즈 잇 레디?", ko: "온라인으로 책을 예약했는데, 준비됐나요?" },
+        { who: "clerk", en: "Yes, it's on the reserved shelf under your name.", pron: "예스, 잇츠 온 더 리저브드 쉘프 언더 유어 네임.", ko: "네, 예약 도서 코너에 성함으로 있습니다." }
+      ]
+    },
+    {
+      titleKo: "열람실 좌석을 문의할 때",
+      titleEn: "Asking about reading room seats",
+      lines: [
+        { who: "customer", en: "Are there any seats available in the reading room?", pron: "아 데어 애니 시츠 어베일러블 인 더 리딩 룸?", ko: "열람실에 자리 있나요?" },
+        { who: "clerk", en: "Yes, there are a few open seats on the second floor.", pron: "예스, 데어 아 어 퓨 오픈 시츠 온 더 세컨드 플로어.", ko: "네, 2층에 빈자리가 몇 개 있어요." }
+      ]
+    },
+    {
+      titleKo: "노트북 사용 여부를 물어볼 때",
+      titleEn: "Asking about using a laptop",
+      lines: [
+        { who: "customer", en: "Can I use my laptop in here?", pron: "캔 아이 유즈 마이 랩탑 인 히어?", ko: "여기서 노트북 써도 되나요?" },
+        { who: "clerk", en: "Yes, but please use headphones for sound.", pron: "예스, 벗 플리즈 유즈 헤드폰즈 포 사운드.", ko: "네, 소리는 이어폰으로 들어주세요." }
+      ]
+    },
+    {
+      titleKo: "조용히 해달라는 안내를 받을 때",
+      titleEn: "Being asked to keep it down",
+      lines: [
+        { who: "clerk", en: "Could you keep your voice down a bit? This is a quiet zone.", pron: "쿠쥬 킵 유어 보이스 다운 어 빗? 디스 이즈 어 콰이엇 존.", ko: "목소리를 조금만 낮춰주시겠어요? 여긴 정숙 구역이라서요." },
+        { who: "customer", en: "Oh, sorry about that.", pron: "오, 쏘리 어바웃 댓.", ko: "아, 죄송해요." }
+      ]
+    },
+    {
+      titleKo: "복사·프린트를 이용할 때",
+      titleEn: "Using the printer or copier",
+      lines: [
+        { who: "customer", en: "Is there a printer I can use here?", pron: "이즈 데어 어 프린터 아이 캔 유즈 히어?", ko: "여기 프린트할 수 있는 곳 있나요?" },
+        { who: "clerk", en: "Yes, it's next to the front desk. It's 100 won per page.", pron: "예스, 잇츠 넥스트 투 더 프런트 데스크. 잇츠 원 헌드레드 원 퍼 페이지.", ko: "네, 안내데스크 옆에 있어요. 한 장에 100원입니다." }
+      ]
+    },
+    {
+      titleKo: "무인 반납함 위치를 물어볼 때",
+      titleEn: "Asking about the book drop",
+      lines: [
+        { who: "customer", en: "Where's the book drop for after-hours returns?", pron: "웨얼즈 더 북 드랍 포 애프터-아워즈 리턴즈?", ko: "폐관 후 반납할 수 있는 반납함이 어디 있나요?" },
+        { who: "clerk", en: "It's right outside the main entrance.", pron: "잇츠 라잇 아웃사이드 더 메인 엔트런스.", ko: "정문 바로 밖에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "연체료를 안내받을 때",
+      titleEn: "Being told about a late fee",
+      lines: [
+        { who: "clerk", en: "This book is three days overdue, so there's a small late fee.", pron: "디스 북 이즈 쓰리 데이즈 오버듀, 쏘 데얼즈 어 스몰 레이트 피.", ko: "이 책이 3일 연체됐어요, 그래서 연체료가 조금 있습니다." },
+        { who: "customer", en: "Okay, how much is it?", pron: "오케이, 하우 머치 이즈 잇?", ko: "네, 얼마인가요?" }
+      ]
+    },
+    {
+      titleKo: "스터디룸을 예약할 때",
+      titleEn: "Reserving a study room",
+      lines: [
+        { who: "customer", en: "I'd like to reserve a study room for two hours.", pron: "아이드 라이크 투 리저브 어 스터디 룸 포 투 아워즈.", ko: "스터디룸을 2시간 예약하고 싶어요." },
+        { who: "clerk", en: "Sure, how many people will be using it?", pron: "슈어, 하우 매니 피플 윌 비 유징 잇?", ko: "네, 몇 명이서 이용하실 건가요?" }
+      ]
+    },
+    {
+      titleKo: "와이파이 비밀번호를 물어볼 때",
+      titleEn: "Asking for the Wi-Fi password",
+      lines: [
+        { who: "customer", en: "Could I get the Wi-Fi password?", pron: "쿠다이 겟 더 와이파이 패스워드?", ko: "와이파이 비밀번호 좀 알 수 있을까요?" },
+        { who: "clerk", en: "It's posted on the wall by the desk.", pron: "잇츠 포스티드 온 더 월 바이 더 데스크.", ko: "안내데스크 옆 벽에 붙어 있어요." }
+      ]
+    },
+    {
+      titleKo: "이용 시간을 물어볼 때",
+      titleEn: "Asking about opening hours",
+      lines: [
+        { who: "customer", en: "What time does the library close today?", pron: "왓 타임 더즈 더 라이브러리 클로즈 투데이?", ko: "오늘 도서관 몇 시에 닫나요?" },
+        { who: "clerk", en: "We close at 6 PM on weekdays.", pron: "위 클로즈 앳 식스 피엠 온 위크데이즈.", ko: "평일엔 오후 6시에 닫습니다." }
+      ]
+    }
+  ],
+  // 관광시설 — 현충사·외암민속마을 등 조사자료 기반 신규 작성(그룹 B)
+  AT4: [
+    {
+      titleKo: "운영시간 문의",
+      titleEn: "Asking operating hours",
+      lines: [
+        { who: "customer", en: "What time does Hyeonchungsa open?", pron: "왓 타임 더즈 현충사 오픈?", ko: "현충사는 몇 시에 여나요?" },
+        { who: "clerk", en: "It opens at 9 AM and closes at 6 PM.", pron: "잇 오픈즈 앳 나인 에이엠 앤 클로지즈 앳 씩스 피엠.", ko: "오전 9시에 열고 오후 6시에 닫아요." }
+      ]
+    },
+    {
+      titleKo: "휴관일 안내",
+      titleEn: "Closed day notice",
+      lines: [
+        { who: "customer", en: "Is it open every day?", pron: "이즈 잇 오픈 에브리 데이?", ko: "매일 여나요?" },
+        { who: "clerk", en: "No, it's closed on Mondays.", pron: "노, 잇츠 클로즈드 온 먼데이즈.", ko: "아니요, 월요일은 휴관이에요." }
+      ]
+    },
+    {
+      titleKo: "외암민속마을 운영 문의",
+      titleEn: "Asking about Oeam Folk Village",
+      lines: [
+        { who: "customer", en: "Is Oeam Folk Village open on holidays too?", pron: "이즈 외암민속마을 오픈 온 할러데이즈 투?", ko: "외암민속마을은 공휴일에도 여나요?" },
+        { who: "clerk", en: "Yes, it's open every day of the year.", pron: "예스, 잇츠 오픈 에브리 데이 오브 디 이어.", ko: "네, 연중무휴로 운영돼요." }
+      ]
+    },
+    {
+      titleKo: "입장료 문의",
+      titleEn: "Asking about the admission fee",
+      lines: [
+        { who: "customer", en: "How much is the admission fee?", pron: "하우 머치 이즈 디 어드미션 피?", ko: "입장료가 얼마인가요?" },
+        { who: "clerk", en: "Please check with the information desk for the current fee.", pron: "플리즈 첵 위드 디 인포메이션 데스크 포 더 커런트 피.", ko: "정확한 요금은 안내데스크에서 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "전화 문의",
+      titleEn: "Asking for a phone number",
+      lines: [
+        { who: "customer", en: "Do you have a phone number I can call?", pron: "두 유 해브 어 폰 넘버 아이 캔 콜?", ko: "전화로 문의할 수 있는 번호가 있나요?" },
+        { who: "clerk", en: "Yes, you can call the information center directly.", pron: "예스, 유 캔 콜 디 인포메이션 센터 다이렉틀리.", ko: "네, 안내센터로 바로 전화하시면 됩니다." }
+      ]
+    }
+  ],
+  HP8: [
+    {
+      titleKo: "접수할 때",
+      titleEn: "Checking in at the front desk",
+      lines: [
+        { who: "clerk", en: "Have you visited us before?", pron: "해브 유 비지티드 어스 비포어?", ko: "저희 병원 처음이신가요?" },
+        { who: "customer", en: "No, this is my first time.", pron: "노, 디스 이즈 마이 퍼스트 타임.", ko: "네, 처음이에요." }
+      ]
+    },
+    {
+      titleKo: "증상을 설명할 때",
+      titleEn: "Describing your symptoms",
+      lines: [
+        { who: "clerk", en: "What brings you in today?", pron: "왓 브링스 유 인 투데이?", ko: "오늘 어디가 불편해서 오셨어요?" },
+        { who: "customer", en: "I've had a sore throat and fever since yesterday.", pron: "아이브 해드 어 소어 쓰로트 앤 피버 신스 예스터데이.", ko: "어제부터 목이 아프고 열이 나요." }
+      ]
+    },
+    {
+      titleKo: "예약을 확인할 때",
+      titleEn: "Confirming an appointment",
+      lines: [
+        { who: "customer", en: "I have an appointment at 3 o'clock.", pron: "아이 해브 언 어포인트먼트 앳 쓰리 어클락.", ko: "3시에 예약했는데요." },
+        { who: "clerk", en: "Let me check. Yes, please have a seat.", pron: "렛 미 체크. 예스, 플리즈 해브 어 시트.", ko: "확인해볼게요. 네, 앉아서 기다려주세요." }
+      ]
+    },
+    {
+      titleKo: "보험증을 제출할 때",
+      titleEn: "Submitting your insurance card",
+      lines: [
+        { who: "clerk", en: "Could I see your insurance card, please?", pron: "쿠다이 씨 유어 인슈어런스 카드, 플리즈?", ko: "보험증 좀 보여주시겠어요?" },
+        { who: "customer", en: "Sure, here it is.", pron: "슈어, 히어 잇 이즈.", ko: "네, 여기 있습니다." }
+      ]
+    },
+    {
+      titleKo: "진료실로 안내받을 때",
+      titleEn: "Being called into the exam room",
+      lines: [
+        { who: "clerk", en: "You can go into room 2 now.", pron: "유 캔 고 인투 룸 투 나우.", ko: "2번 진료실로 들어가시면 됩니다." },
+        { who: "customer", en: "Thank you.", pron: "땡큐.", ko: "감사합니다." }
+      ]
+    },
+    {
+      titleKo: "대기 시간을 물어볼 때",
+      titleEn: "Asking about the wait time",
+      lines: [
+        { who: "customer", en: "How long is the wait right now?", pron: "하우 롱 이즈 더 웨이트 라잇 나우?", ko: "지금 얼마나 기다려야 하나요?" },
+        { who: "clerk", en: "About 20 minutes.", pron: "어바웃 트웬티 미닛츠.", ko: "20분 정도 걸려요." }
+      ]
+    },
+    {
+      titleKo: "처방전을 받을 때",
+      titleEn: "Getting a prescription",
+      lines: [
+        { who: "clerk", en: "Here's your prescription. Please take it to the pharmacy.", pron: "히얼즈 유어 프리스크립션. 플리즈 테이크 잇 투 더 파머시.", ko: "처방전 드릴게요. 약국에서 받아 가세요." },
+        { who: "customer", en: "Thank you.", pron: "땡큐.", ko: "감사합니다." }
+      ]
+    },
+    {
+      titleKo: "약 알레르기를 말할 때",
+      titleEn: "Mentioning a drug allergy",
+      lines: [
+        { who: "customer", en: "I'm allergic to penicillin.", pron: "아임 얼러직 투 페니실린.", ko: "저 페니실린 알레르기가 있어요." },
+        { who: "clerk", en: "Thanks for letting us know, we'll note that.", pron: "땡스 포 레팅 어스 노우, 위일 노트 댓.", ko: "알려주셔서 감사합니다, 기록해둘게요." }
+      ]
+    },
+    {
+      titleKo: "다음 예약을 잡을 때",
+      titleEn: "Scheduling a follow-up",
+      lines: [
+        { who: "clerk", en: "Could you come back in a week for a follow-up?", pron: "쿠쥬 컴 백 인 어 윅 포 어 팔로우-업?", ko: "일주일 후에 재진하러 오실 수 있나요?" },
+        { who: "customer", en: "Yes, that works for me.", pron: "예스, 댓 웍스 포 미.", ko: "네, 괜찮아요." }
+      ]
+    },
+    {
+      titleKo: "검사 결과를 물어볼 때",
+      titleEn: "Asking about test results",
+      lines: [
+        { who: "customer", en: "Are my test results ready?", pron: "아 마이 테스트 리절츠 레디?", ko: "제 검사 결과 나왔나요?" },
+        { who: "clerk", en: "Not yet, they'll be ready tomorrow.", pron: "낫 옛, 데일 비 레디 터마로우.", ko: "아직이요, 내일 나올 예정이에요." }
+      ]
+    },
+    {
+      titleKo: "진료과를 안내받을 때",
+      titleEn: "Being directed to the right department",
+      lines: [
+        { who: "customer", en: "I have a stomachache. Which department should I go to?", pron: "아이 해브 어 스터먹에이크. 위치 디파트먼트 슈드 아이 고 투?", ko: "배가 아픈데 어느 과로 가야 하나요?" },
+        { who: "clerk", en: "Please go to internal medicine, on the second floor.", pron: "플리즈 고 투 인터널 메디슨, 온 더 세컨드 플로어.", ko: "내과로 가시면 됩니다, 2층이에요." }
+      ]
+    },
+    {
+      titleKo: "진료비를 결제할 때",
+      titleEn: "Paying for the visit",
+      lines: [
+        { who: "clerk", en: "Your total today is 18,000 won.", pron: "유어 토탈 투데이 이즈 에잇틴 싸우전드 원.", ko: "오늘 진료비는 18,000원입니다." },
+        { who: "customer", en: "I'll pay by card.", pron: "아일 페이 바이 카드.", ko: "카드로 계산할게요." }
+      ]
+    },
+    {
+      titleKo: "진단서를 요청할 때",
+      titleEn: "Requesting a medical certificate",
+      lines: [
+        { who: "customer", en: "Could I get a medical certificate for work, please?", pron: "쿠다이 겟 어 메디컬 서티피킷 포 워크, 플리즈?", ko: "회사 제출용 진단서 좀 받을 수 있을까요?" },
+        { who: "clerk", en: "Sure, it'll take about 10 minutes.", pron: "슈어, 잇일 테이크 어바웃 텐 미닛츠.", ko: "네, 10분 정도 걸립니다." }
+      ]
+    },
+    {
+      titleKo: "어지러움을 호소할 때",
+      titleEn: "Explaining you feel dizzy",
+      lines: [
+        { who: "customer", en: "I feel dizzy and a bit nauseous.", pron: "아이 필 디지 앤 어 빗 노셔스.", ko: "어지럽고 속이 좀 메스꺼워요." },
+        { who: "clerk", en: "Let's have the doctor take a look right away.", pron: "렛츠 해브 더 닥터 테이크 어 룩 라잇 어웨이.", ko: "바로 진료 보실 수 있게 해드릴게요." }
+      ]
+    },
+    {
+      titleKo: "진료를 마치고 나갈 때",
+      titleEn: "Finishing up the visit",
+      lines: [
+        { who: "clerk", en: "Take care, and rest well.", pron: "테이크 케어, 앤 레스트 웰.", ko: "몸조리 잘하시고요." },
+        { who: "customer", en: "Thank you, I will.", pron: "땡큐, 아이 윌.", ko: "네, 감사합니다." }
+      ]
+    }
+  ],
+  PM9: [
+    {
+      titleKo: "처방전을 제출할 때",
+      titleEn: "Submitting a prescription",
+      lines: [
+        { who: "customer", en: "Here's my prescription.", pron: "히얼즈 마이 프리스크립션.", ko: "여기 처방전이요." },
+        { who: "clerk", en: "Okay, it'll take about five minutes.", pron: "오케이, 잇일 테이크 어바웃 파이브 미닛츠.", ko: "네, 5분 정도 걸립니다." }
+      ]
+    },
+    {
+      titleKo: "복용법을 안내받을 때",
+      titleEn: "Getting dosage instructions",
+      lines: [
+        { who: "clerk", en: "Take this three times a day after meals.", pron: "테이크 디스 쓰리 타임즈 어 데이 애프터 밀즈.", ko: "이건 하루 세 번 식후에 드세요." },
+        { who: "customer", en: "Okay, got it.", pron: "오케이, 갓 잇.", ko: "네, 알겠습니다." }
+      ]
+    },
+    {
+      titleKo: "부작용을 물어볼 때",
+      titleEn: "Asking about side effects",
+      lines: [
+        { who: "customer", en: "Does this medicine have any side effects?", pron: "더즈 디스 메디슨 해브 애니 사이드 이펙츠?", ko: "이 약 부작용이 있나요?" },
+        { who: "clerk", en: "It might make you a bit drowsy.", pron: "잇 마잇 메이크 유 어 빗 드라우지.", ko: "약간 졸릴 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "감기약을 추천받을 때",
+      titleEn: "Asking for a cold medicine recommendation",
+      lines: [
+        { who: "customer", en: "Could you recommend something for a cold?", pron: "쿠쥬 레커멘드 섬씽 포 어 콜드?", ko: "감기약 좀 추천해주시겠어요?" },
+        { who: "clerk", en: "Sure, this one works well for a sore throat.", pron: "슈어, 디스 원 웍스 웰 포 어 소어 쓰로트.", ko: "네, 이게 목 아픈 데 잘 들어요." }
+      ]
+    },
+    {
+      titleKo: "두통약을 구매할 때",
+      titleEn: "Buying headache medicine",
+      lines: [
+        { who: "customer", en: "Could I get something for a headache?", pron: "쿠다이 겟 섬씽 포 어 헤드에이크?", ko: "두통약 좀 주시겠어요?" },
+        { who: "clerk", en: "Sure, here you go.", pron: "슈어, 히어 유 고.", ko: "네, 여기 있습니다." }
+      ]
+    },
+    {
+      titleKo: "하루 복용 횟수를 확인할 때",
+      titleEn: "Checking how many times a day",
+      lines: [
+        { who: "customer", en: "How many times a day should I take this?", pron: "하우 매니 타임즈 어 데이 슈다이 테이크 디스?", ko: "이거 하루에 몇 번 먹어야 하나요?" },
+        { who: "clerk", en: "Twice a day, morning and evening.", pron: "트와이스 어 데이, 모닝 앤 이브닝.", ko: "하루 두 번, 아침저녁으로 드세요." }
+      ]
+    },
+    {
+      titleKo: "소화제를 구매할 때",
+      titleEn: "Buying medicine for indigestion",
+      lines: [
+        { who: "customer", en: "I have an upset stomach. What would you recommend?", pron: "아이 해브 언 업셋 스터먹. 왓 우쥬 레커멘드?", ko: "속이 안 좋은데 뭐가 좋을까요?" },
+        { who: "clerk", en: "This one should help.", pron: "디스 원 슈드 헬프.", ko: "이게 도움이 될 거예요." }
+      ]
+    },
+    {
+      titleKo: "밴드와 연고를 구매할 때",
+      titleEn: "Buying band-aids and ointment",
+      lines: [
+        { who: "customer", en: "Could I get some band-aids and ointment?", pron: "쿠다이 겟 섬 밴드에이즈 앤 오인트먼트?", ko: "밴드하고 연고 좀 주시겠어요?" },
+        { who: "clerk", en: "Sure, anything else?", pron: "슈어, 애니씽 엘스?", ko: "네, 더 필요한 거 있으세요?" }
+      ]
+    },
+    {
+      titleKo: "임신 중 복용 가능 여부를 물어볼 때",
+      titleEn: "Asking if it's safe during pregnancy",
+      lines: [
+        { who: "customer", en: "Is this safe to take while pregnant?", pron: "이즈 디스 세이프 투 테이크 와일 프레그넌트?", ko: "이거 임신 중에 먹어도 되나요?" },
+        { who: "clerk", en: "It's best to check with your doctor first.", pron: "잇츠 베스트 투 첵 위드 유어 닥터 퍼스트.", ko: "의사 선생님께 먼저 확인해보시는 게 좋아요." }
+      ]
+    },
+    {
+      titleKo: "다른 약과 같이 먹어도 되는지 물어볼 때",
+      titleEn: "Asking about drug interactions",
+      lines: [
+        { who: "customer", en: "Can I take this with the medicine I'm already on?", pron: "캔 아이 테이크 디스 위드 더 메디슨 아임 얼레디 온?", ko: "지금 먹는 약이랑 같이 먹어도 되나요?" },
+        { who: "clerk", en: "What are you currently taking?", pron: "왓 아 유 커런틀리 테이킹?", ko: "지금 어떤 약 드시고 계세요?" }
+      ]
+    },
+    {
+      titleKo: "영수증을 요청할 때",
+      titleEn: "Asking for a receipt",
+      lines: [
+        { who: "customer", en: "Could I get a receipt, please?", pron: "쿠다이 겟 어 리시트, 플리즈?", ko: "영수증 주시겠어요?" },
+        { who: "clerk", en: "Sure, here you go.", pron: "슈어, 히어 유 고.", ko: "네, 여기 있습니다." }
+      ]
+    },
+    {
+      titleKo: "카드 결제 여부를 확인할 때",
+      titleEn: "Confirming card payment",
+      lines: [
+        { who: "clerk", en: "How would you like to pay?", pron: "하우 우쥬 라이크 투 페이?", ko: "결제는 어떻게 도와드릴까요?" },
+        { who: "customer", en: "By card, please.", pron: "바이 카드, 플리즈.", ko: "카드로 할게요." }
+      ]
+    },
+    {
+      titleKo: "알레르기 약이 있는지 물어볼 때",
+      titleEn: "Asking about allergy medicine",
+      lines: [
+        { who: "customer", en: "Do you have anything for allergies?", pron: "두 유 해브 애니씽 포 앨러지즈?", ko: "알레르기 약 있나요?" },
+        { who: "clerk", en: "Yes, this one works well.", pron: "예스, 디스 원 웍스 웰.", ko: "네, 이게 잘 들어요." }
+      ]
+    },
+    {
+      titleKo: "비타민을 구매할 때",
+      titleEn: "Buying vitamins",
+      lines: [
+        { who: "customer", en: "Could you recommend a good vitamin?", pron: "쿠쥬 레커멘드 어 굿 바이타민?", ko: "괜찮은 비타민 좀 추천해주시겠어요?" },
+        { who: "clerk", en: "This multivitamin is popular.", pron: "디스 멀티바이타민 이즈 파퓰러.", ko: "이 종합비타민이 인기 많아요." }
+      ]
+    },
+    {
+      titleKo: "약을 다 받고 나갈 때",
+      titleEn: "Finishing up at the pharmacy",
+      lines: [
+        { who: "clerk", en: "Here's your medicine. Get well soon.", pron: "히얼즈 유어 메디슨. 겟 웰 순.", ko: "약 나왔습니다. 얼른 나으세요." },
+        { who: "customer", en: "Thank you so much.", pron: "땡큐 쏘 머치.", ko: "정말 감사합니다." }
+      ]
+    }
+  ],
+  TRN: [
+    {
+      titleKo: "교통카드를 충전할 때",
+      titleEn: "Topping up a transit card",
+      lines: [
+        { who: "customer", en: "Excuse me, where can I top up my transit card?", pron: "익스큐즈 미, 웨어 캔 아이 탑 업 마이 트랜짓 카드?", ko: "교통카드 충전은 어디서 하나요?" },
+        { who: "clerk", en: "There's a machine right over there.", pron: "데얼즈 어 머신 라잇 오버 데어.", ko: "저쪽에 충전기가 있어요." }
+      ]
+    },
+    {
+      titleKo: "타야 할 승강장을 안내받을 때",
+      titleEn: "Asking which platform to use",
+      lines: [
+        { who: "customer", en: "Which platform do I need for the train to Seoul?", pron: "위치 플랫폼 두 아이 니드 포 더 트레인 투 서울?", ko: "서울 가는 열차는 몇 번 승강장인가요?" },
+        { who: "clerk", en: "Platform 3, just up the stairs.", pron: "플랫폼 쓰리, 저스트 업 더 스테어즈.", ko: "3번 승강장이에요, 계단 올라가시면 바로예요." }
+      ]
+    },
+    {
+      titleKo: "환승 방법을 물어볼 때",
+      titleEn: "Asking how to transfer",
+      lines: [
+        { who: "customer", en: "How do I transfer to another line from here?", pron: "하우 두 아이 트랜스퍼 투 어나더 라인 프롬 히어?", ko: "여기서 다른 노선으로 환승하려면 어떻게 하나요?" },
+        { who: "clerk", en: "Follow the signs down that hallway.", pron: "팔로우 더 사인즈 다운 댓 홀웨이.", ko: "저 통로 따라가시면 표지판이 있어요." }
+      ]
+    },
+    {
+      titleKo: "분실물을 문의할 때",
+      titleEn: "Asking about a lost item",
+      lines: [
+        { who: "customer", en: "I think I left my umbrella on the train. What should I do?", pron: "아이 씽크 아이 레프트 마이 엄브렐라 온 더 트레인. 왓 슈다이 두?", ko: "기차에 우산을 두고 내린 것 같아요. 어떻게 해야 하나요?" },
+        { who: "clerk", en: "Please fill out this lost and found form.", pron: "플리즈 필 아웃 디스 로스트 앤 파운드 폼.", ko: "이 분실물 신고서를 작성해주세요." }
+      ]
+    },
+    {
+      titleKo: "요금이 부족해서 정산할 때",
+      titleEn: "Paying the fare balance",
+      lines: [
+        { who: "clerk", en: "Your card doesn't have enough balance.", pron: "유어 카드 더즌트 해브 이너프 밸런스.", ko: "카드 잔액이 부족합니다." },
+        { who: "customer", en: "Oh, sorry. Where can I top it up?", pron: "오, 쏘리. 웨어 캔 아이 탑 잇 업?", ko: "아, 죄송해요. 어디서 충전할 수 있나요?" }
+      ]
+    },
+    {
+      titleKo: "출구 번호를 물어볼 때",
+      titleEn: "Asking for the exit number",
+      lines: [
+        { who: "customer", en: "Which exit should I take for the museum?", pron: "위치 엑싯 슈다이 테이크 포 더 뮤지엄?", ko: "박물관 가려면 몇 번 출구로 나가야 하나요?" },
+        { who: "clerk", en: "Exit 3 is the closest.", pron: "엑싯 쓰리 이즈 더 클로시스트.", ko: "3번 출구가 제일 가까워요." }
+      ]
+    },
+    {
+      titleKo: "엘리베이터 위치를 물어볼 때",
+      titleEn: "Asking where the elevator is",
+      lines: [
+        { who: "customer", en: "Is there an elevator? I have a stroller.", pron: "이즈 데어 언 엘리베이터? 아이 해브 어 스트롤러.", ko: "엘리베이터 있나요? 유모차가 있어서요." },
+        { who: "clerk", en: "Yes, it's at the end of the platform.", pron: "예스, 잇츠 앳 디 엔드 오브 더 플랫폼.", ko: "네, 승강장 끝 쪽에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "막차 시간을 물어볼 때",
+      titleEn: "Asking about the last train",
+      lines: [
+        { who: "customer", en: "What time is the last train tonight?", pron: "왓 타임 이즈 더 라스트 트레인 투나잇?", ko: "오늘 막차가 몇 시예요?" },
+        { who: "clerk", en: "It's around midnight.", pron: "잇츠 어라운드 미드나잇.", ko: "자정쯤입니다." }
+      ]
+    },
+    {
+      titleKo: "1회용 교통카드를 구매할 때",
+      titleEn: "Buying a single-use ticket",
+      lines: [
+        { who: "customer", en: "I'd like to buy a single-use ticket, please.", pron: "아이드 라이크 투 바이 어 싱글-유즈 티켓, 플리즈.", ko: "1회용 교통카드 하나 사고 싶어요." },
+        { who: "clerk", en: "Sure, where are you headed?", pron: "슈어, 웨어 아 유 헤디드?", ko: "네, 어디까지 가세요?" }
+      ]
+    },
+    {
+      titleKo: "정기권을 구매할 때",
+      titleEn: "Buying a monthly pass",
+      lines: [
+        { who: "customer", en: "I'd like to get a monthly pass, please.", pron: "아이드 라이크 투 겟 어 먼슬리 패스, 플리즈.", ko: "정기권 하나 구매하고 싶어요." },
+        { who: "clerk", en: "Sure, that's 65,000 won.", pron: "슈어, 댓츠 식스티파이브 싸우전드 원.", ko: "네, 65,000원입니다." }
+      ]
+    },
+    {
+      titleKo: "반대 방향으로 잘못 탔을 때",
+      titleEn: "Realizing you took the wrong direction",
+      lines: [
+        { who: "customer", en: "I think I got on the wrong direction train. What should I do?", pron: "아이 씽크 아이 갓 온 더 롱 디렉션 트레인. 왓 슈다이 두?", ko: "제가 반대 방향 열차를 탄 것 같아요. 어떻게 해야 하나요?" },
+        { who: "clerk", en: "Just get off at the next stop and cross to the other side.", pron: "저스트 겟 오프 앳 더 넥스트 스탑 앤 크로스 투 디 아더 사이드.", ko: "다음 역에서 내려서 반대편으로 건너가시면 됩니다." }
+      ]
+    },
+    {
+      titleKo: "운행 지연을 문의할 때",
+      titleEn: "Asking about a delay",
+      lines: [
+        { who: "customer", en: "Is the train running late today?", pron: "이즈 더 트레인 러닝 레이트 투데이?", ko: "오늘 열차가 지연되고 있나요?" },
+        { who: "clerk", en: "Yes, there's about a 10-minute delay.", pron: "예스, 데얼즈 어바웃 어 텐-미닛 딜레이.", ko: "네, 10분 정도 지연되고 있습니다." }
+      ]
+    },
+    {
+      titleKo: "분실물 센터를 찾을 때",
+      titleEn: "Finding the lost and found center",
+      lines: [
+        { who: "customer", en: "Where's the lost and found center?", pron: "웨얼즈 더 로스트 앤 파운드 센터?", ko: "분실물 센터가 어디예요?" },
+        { who: "clerk", en: "It's near exit 1, by the station office.", pron: "잇츠 니어 엑싯 원, 바이 더 스테이션 오피스.", ko: "1번 출구 근처, 역무실 옆에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "화장실 위치를 물어볼 때",
+      titleEn: "Asking where the restroom is",
+      lines: [
+        { who: "customer", en: "Is there a restroom here?", pron: "이즈 데어 어 레스트룸 히어?", ko: "여기 화장실 있나요?" },
+        { who: "clerk", en: "Yes, it's before the gates, to your left.", pron: "예스, 잇츠 비포어 더 게이츠, 투 유어 레프트.", ko: "네, 개찰구 통과 전 왼쪽에 있어요." }
+      ]
+    },
+    {
+      titleKo: "게이트가 안 열릴 때 도움을 요청할 때",
+      titleEn: "Asking for help when the gate won't open",
+      lines: [
+        { who: "customer", en: "The gate won't open for me. Could you help?", pron: "더 게이트 원트 오픈 포 미. 쿠쥬 헬프?", ko: "게이트가 안 열리는데 도와주시겠어요?" },
+        { who: "clerk", en: "Let me check your card. Please try again.", pron: "렛 미 첵 유어 카드. 플리즈 트라이 어겐.", ko: "카드 좀 볼게요. 다시 한번 시도해보세요." }
+      ]
+    }
+  ],
+};
+
+const CATEGORY_LABEL = { SPT: "체육시설", HLC: "보건소", GOV: "행정복지센터", FAM: "아산가족센터", CT1: "문화시설", LIB: "도서관", SCI: "과학관·곤충원", YTH: "청소년문화센터", JOB: "여성새일센터", CHD: "육아종합지원센터", AGR: "농업기술센터", EDU: "평생학습관", AT4: "관광시설", HP8: "병원", PM9: "약국", TRN: "교통시설" };
+const CATEGORY_ICON = {
+  SPT: { emoji: "🏟️", color: "#2E7D32" },
+  HLC: { emoji: "🩺", color: "#16A34A" },
+  GOV: { emoji: "🏛️", color: "#1D4ED8" },
+  FAM: { emoji: "👨‍👩‍👧", color: "#DB2777" },
+  CT1: { emoji: "🎭", color: "#9B4F96" },
+  LIB: { emoji: "📚", color: "#7B4FE0" },
+  SCI: { emoji: "🔭", color: "#0EA5E9" },
+  YTH: { emoji: "🎨", color: "#F97316" },
+  JOB: { emoji: "💼", color: "#7C3AED" },
+  CHD: { emoji: "🍼", color: "#EF4444" },
+  AGR: { emoji: "🌾", color: "#92400E" },
+  EDU: { emoji: "🎓", color: "#059669" },
+  AT4: { emoji: "🏞️", color: "#CA8A04" },
+  HP8: { emoji: "🏥", color: "#2FA968" },
+  PM9: { emoji: "💊", color: "#2F9AA9" },
+  TRN: { emoji: "🚉", color: "#00A651" }
+};
+// 도서관 마커는 카테고리 고유색 대신 좌석 정보 유무로 색을 바꾼다(2026-08-18 사용자 요청).
+const LIB_SEAT_COLOR = { available: "#16A34A", none: "#9CA3AF" };
+const STAFF_LABEL = { SPT: "직원", HLC: "담당자", GOV: "공무원", FAM: "상담사", CT1: "안내원", LIB: "사서", SCI: "안내원", YTH: "담당자", JOB: "상담사", CHD: "상담사", AGR: "담당자", EDU: "담당자", AT4: "안내원", HP8: "간호사", PM9: "약사", TRN: "역무원" };
+const CUSTOMER_LABEL = { SPT: "이용자", HLC: "이용자", GOV: "민원인", FAM: "이용자", LIB: "이용자", SCI: "관람객", YTH: "이용자", JOB: "이용자", CHD: "학부모", AGR: "농업인", EDU: "수강생", AT4: "관람객" };
+// 표준 Kakao 카테고리 코드가 없는 유관기관은 기관명으로 키워드 검색한다.
+// 문화시설(CT1)·병원(HP8)·약국(PM9)·관광시설(AT4)은 표준 코드가 있어 categorySearch 그대로 쓴다.
+// 단, 관광시설은 지도 패닝 위치가 아니라 아산시청 좌표+20km로 고정 검색한다(아래 searchNearby 참고).
+// 체육시설(SPT)·행정복지센터(GOV)·교통시설(TRN)은 기관이 여럿이라 배열로 등록하고 전부 검색해 합친다
+// (멀티 키워드 검색 — 2026-09-19 재설계, searchNearby의 multiKeywordSearch 참고).
+const KEYWORD_QUERY = {
+  SPT: [
+    "아산시복합스포츠센터", "이순신종합운동장", "아산건강문화센터", "아산배미수영장",
+    "아산시 배방북수스포츠센터", "배방공수스포츠센터", "아산시민체육관", "둔포국민체육센터",
+    "아산장애인국민체육센터", "한마음야구장 아산국민체육센터"
+  ],
+  HLC: "아산시보건소",
+  GOV: [
+    "염치읍행정복지센터", "배방읍행정복지센터",
+    "송악면행정복지센터", "탕정면행정복지센터", "음봉면행정복지센터", "둔포면행정복지센터",
+    "영인면행정복지센터", "인주면행정복지센터", "선장면행정복지센터", "도고면행정복지센터", "신창면행정복지센터",
+    "온양1동행정복지센터", "온양2동행정복지센터", "온양3동행정복지센터",
+    "온양4동행정복지센터", "온양5동행정복지센터", "온양6동행정복지센터"
+  ],
+  FAM: "아산시가족센터",
+  SCI: "아산과학관",
+  YTH: "청소년문화의집",
+  JOB: "여성새로일하기센터",
+  CHD: "육아종합지원센터",
+  AGR: "농업기술센터",
+  EDU: "평생학습관",
+  TRN: ["천안아산역", "아산역", "아산고속버스터미널", "아산시외버스터미널"]
+};
+// 마커 클릭 시 "직원 교육자료 보기" 버튼을 보여줄 기관. 값이 있는 카테고리만 버튼이 뜬다(4번 작업지시).
+const TRAINING_APP_URL = {
+  SPT: "edu/sports-center.html"
+};
+const DEFAULT_CENTER = { lat: 36.7898, lng: 127.0018 }; // 충청남도 아산시청 (위치 정보를 못 가져올 때 기본값)
+
+let map, placesService, geocoder;
+let markers = [];
+let myLocationMarker = null;
+let currentCat = "SPT";
+let currentSheetPlace = null;
+let roadviewInstance = null;
+let roadviewLoadedForKey = null;
+
+function buildMarkerImage(catCode, seatStatus) {
+  const meta = CATEGORY_ICON[catCode] || { emoji: "📍", color: "#2E6FF2" };
+  const color = (catCode === "LIB" && seatStatus) ? LIB_SEAT_COLOR[seatStatus] : meta.color;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+    <path d="M18 0C8 0 0 8 0 18c0 13 18 26 18 26s18-13 18-26C36 8 28 0 18 0z" fill="${color}"/>
+    <circle cx="18" cy="17" r="12.5" fill="#fff"/>
+    <text x="18" y="23" font-size="15" text-anchor="middle">${meta.emoji}</text>
+  </svg>`;
+  return new kakao.maps.MarkerImage(
+    "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg),
+    new kakao.maps.Size(36, 44),
+    { offset: new kakao.maps.Point(18, 44) }
+  );
+}
+
+function setMyLocationMarker(center) {
+  const position = new kakao.maps.LatLng(center.lat, center.lng);
+  if (myLocationMarker) {
+    myLocationMarker.setPosition(position);
+    return;
+  }
+  myLocationMarker = new kakao.maps.Marker({
+    map,
+    position,
+    zIndex: 10,
+    image: new kakao.maps.MarkerImage(
+      "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="7" fill="#2E6FF2" stroke="#fff" stroke-width="3"/></svg>'),
+      new kakao.maps.Size(18, 18)
+    )
+  });
+}
+
+function initMap(center) {
+  const container = document.getElementById("map");
+  map = new kakao.maps.Map(container, {
+    center: new kakao.maps.LatLng(center.lat, center.lng),
+    level: 4
+  });
+  placesService = new kakao.maps.services.Places();
+  geocoder = new kakao.maps.services.Geocoder();
+
+  // 카카오맵은 flex 레이아웃으로 컨테이너 높이가 늦게 확정되면 초기 크기로 굳어버린다.
+  // 레이아웃이 안정된 뒤 한 번 더 relayout해서 실제 컨테이너 크기에 맞춘다.
+  requestAnimationFrame(() => {
+    map.relayout();
+    map.setCenter(new kakao.maps.LatLng(center.lat, center.lng));
+  });
+  window.addEventListener("resize", () => map.relayout());
+
+  setMyLocationMarker(center);
+
+  searchNearby(center, currentCat);
+
+  kakao.maps.event.addListener(map, "idle", () => {
+    const c = map.getCenter();
+    searchNearby({ lat: c.getLat(), lng: c.getLng() }, currentCat);
+  });
+}
+
+function clearMarkers() {
+  markers.forEach(m => m.setMap(null));
+  markers = [];
+}
+
+function searchNearby(center, catCode) {
+  document.getElementById("mapHintText").textContent = `${CATEGORY_LABEL[catCode]} 찾는 중…`;
+  document.getElementById("libLegend").classList.toggle("hidden", catCode !== "LIB");
+
+  // 도서관 한 곳마다 "매칭되는 도서관인가 → 그 도서관에 현재 좌석 스냅샷 행이 있는가"를
+  // 확인해야 마커 색을 정할 수 있다. index/seats 스냅샷은 fetch 프로미스가 캐시돼 있어
+  // 15곳을 확인해도 실제 네트워크 요청은 처음 한 번뿐이다.
+  const resolveSeatStatus = async (place) => {
+    const lib = await findMatchingLibrary(place);
+    if (!lib) return "none";
+    try {
+      const { rows } = await fetchLibrarySeatRows(lib);
+      return rows.length ? "available" : "none";
+    } catch {
+      return "none";
+    }
+  };
+
+  const handleResults = async (results, status) => {
+    if (status !== kakao.maps.services.Status.OK || !results.length) {
+      document.getElementById("mapHintText").textContent = "주변에서 찾지 못했습니다. 지도를 움직여보세요.";
+      clearMarkers();
+      renderResultsList([], catCode);
+      return;
+    }
+    clearMarkers();
+    const limited = results.slice(0, 20); // 행정복지센터(17개)까지 한 화면에 다 뜨도록 여유를 둠
+    let items = limited.map(place => ({ place, seatStatus: null }));
+    if (catCode === "LIB") {
+      items = await Promise.all(
+        limited.map(async place => ({ place, seatStatus: await resolveSeatStatus(place) }))
+      );
+    }
+    items.forEach(({ place, seatStatus }) => {
+      const marker = new kakao.maps.Marker({
+        map,
+        position: new kakao.maps.LatLng(place.y, place.x),
+        image: buildMarkerImage(catCode, seatStatus)
+      });
+      kakao.maps.event.addListener(marker, "click", () => openSheet(place, catCode));
+      markers.push(marker);
+    });
+    renderResultsList(items, catCode);
+    document.getElementById("mapHintText").textContent = `주변 ${CATEGORY_LABEL[catCode]} ${items.length}곳 표시됨`;
+  };
+
+  const location = new kakao.maps.LatLng(center.lat, center.lng);
+  const query = KEYWORD_QUERY[catCode];
+  if (catCode === "LIB") {
+    // 도서관은 표준 카테고리 코드가 없어 키워드 검색 후 도서관 분류만 골라낸다.
+    placesService.keywordSearch("도서관", (data, status) => {
+      const filtered = status === kakao.maps.services.Status.OK
+        ? data.filter(p => p.category_name && p.category_name.includes("도서관"))
+        : [];
+      handleResults(filtered, filtered.length ? kakao.maps.services.Status.OK : kakao.maps.services.Status.ZERO_RESULT);
+    }, { location, radius: 1200 });
+  } else if (Array.isArray(query)) {
+    // 체육시설·행정복지센터·교통시설 — 여러 기관명을 각각 검색해 결과를 하나로 합친다("멀티 키워드").
+    // 기관들이 아산시 전역에 흩어져 있어 현재 지도 중심이 아니라 아산시청 좌표를 기준으로,
+    // Kakao가 허용하는 최대 반경(20km)으로 찾는다 — 그래야 지도를 어디로 옮겨놔도 다 잡힌다.
+    multiKeywordSearch(query, DEFAULT_CENTER, 20000, handleResults);
+  } else if (query) {
+    // 보건소·가족센터·과학관곤충원·청소년문화센터·여성새일센터·육아종합지원센터·농업기술센터·
+    // 평생학습관 — 전부 "아산시 안 특정 기관 하나"를 찾는 카테고리라, 지도를 패닝한 현재 위치가
+    // 아니라 아산시청 좌표를 기준으로 찾는다. 지도 중심 기준 1.2km로 찾으면, 사용자가 지도를
+    // 조금만 움직여도(관광시설 등을 보다가 돌아오는 경우 등) 엉뚱한 동명 기관이 걸릴 수 있다
+    // (2026-09-19 실제로 발견 — "아산가족센터"를 지도 중심이 966m 벗어난 상태에서 검색하니
+    // 아산로 13의 진짜 아산시가족센터 대신 "아산시다문화가족지원센터 1센터"가 잡혔다).
+    // AT4(관광시설)에 적용한 것과 같은 방식으로 고정한다.
+    placesService.keywordSearch(
+      query,
+      handleResults,
+      { location: new kakao.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng), radius: 20000, size: 15 }
+    );
+  } else if (catCode === "AT4") {
+    // 관광시설 — 현충사·외암민속마을·신정호지방정원 등이 아산시청에서 여러 km 떨어져 있어,
+    // 다른 카테고리처럼 지도 패닝 위치+1.2km로 찾으면 아무것도 안 잡힌다(2026-09-19 발견된
+    // 버그 — 브라우저로 직접 확인해서 찾음). 체육시설·행정복지센터처럼 아산시청 좌표+최대
+    // 반경(20km)으로 고정한다.
+    placesService.categorySearch(
+      "AT4",
+      handleResults,
+      { location: new kakao.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng), radius: 20000, size: 15 }
+    );
+  } else {
+    placesService.categorySearch(catCode, handleResults, { location, radius: 1200, size: 15 });
+  }
+}
+
+// 검색어 여러 개를 각각 keywordSearch로 돌리고, 기관마다 가장 정확도 높은 결과(1위)만 모아
+// 중복(같은 place id) 없이 합친다. 콜백은 기존 handleResults와 같은 (results, status) 시그니처.
+function multiKeywordSearch(keywords, centerLatLng, radius, callback) {
+  const location = new kakao.maps.LatLng(centerLatLng.lat, centerLatLng.lng);
+  const merged = [];
+  const seenIds = new Set();
+  let remaining = keywords.length;
+  keywords.forEach(keyword => {
+    placesService.keywordSearch(keyword, (data, status) => {
+      if (status === kakao.maps.services.Status.OK && data.length) {
+        const top = data[0];
+        if (!seenIds.has(top.id)) {
+          seenIds.add(top.id);
+          merged.push(top);
+        }
+      }
+      remaining -= 1;
+      if (remaining === 0) {
+        callback(merged, merged.length ? kakao.maps.services.Status.OK : kakao.maps.services.Status.ZERO_RESULT);
+      }
+    }, { location, radius });
+  });
+}
+
+function renderResultsList(items, catCode) {
+  const list = document.getElementById("resultsList");
+  list.innerHTML = "";
+  items.forEach(({ place, seatStatus }) => {
+    const item = document.createElement("div");
+    item.className = "result-item";
+    const dot = catCode === "LIB"
+      ? `<span class="result-dot ${seatStatus === "available" ? "on" : "off"}"></span>`
+      : "";
+    item.innerHTML = `
+      <div class="result-name">${dot}${place.place_name}</div>
+      <div class="result-addr">${place.road_address_name || place.address_name || ""}</div>
+    `;
+    item.addEventListener("click", () => {
+      map.setCenter(new kakao.maps.LatLng(place.y, place.x));
+      openSheet(place, catCode);
+    });
+    list.appendChild(item);
+  });
+}
+
+function searchRegion(query) {
+  if (!query || !query.trim()) return;
+  document.getElementById("mapHintText").textContent = "지역 검색 중…";
+  geocoder.addressSearch(query, (result, status) => {
+    if (status === kakao.maps.services.Status.OK && result[0]) {
+      map.setCenter(new kakao.maps.LatLng(parseFloat(result[0].y), parseFloat(result[0].x)));
+      return;
+    }
+    placesService.keywordSearch(query, (data, kstatus) => {
+      if (kstatus === kakao.maps.services.Status.OK && data[0]) {
+        map.setCenter(new kakao.maps.LatLng(parseFloat(data[0].y), parseFloat(data[0].x)));
+      } else {
+        document.getElementById("mapHintText").textContent = "검색 결과가 없습니다. 다른 지역명으로 시도해보세요.";
+      }
+    });
+  });
+}
+document.getElementById("searchToggleBtn").addEventListener("click", () => {
+  const box = document.getElementById("regionSearchBox");
+  box.classList.toggle("open");
+  if (box.classList.contains("open")) document.getElementById("regionInput").focus();
+});
+document.getElementById("regionSearchBtn").addEventListener("click", () => {
+  searchRegion(document.getElementById("regionInput").value);
+});
+document.getElementById("regionInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") searchRegion(e.target.value);
+});
+
+function setMapType(type) {
+  if (!map) return;
+  map.setMapTypeId(type === "skyview" ? kakao.maps.MapTypeId.SKYVIEW : kakao.maps.MapTypeId.ROADMAP);
+  document.getElementById("roadmapBtn").classList.toggle("active", type === "roadmap");
+  document.getElementById("skyviewBtn").classList.toggle("active", type === "skyview");
+}
+document.getElementById("roadmapBtn").addEventListener("click", () => setMapType("roadmap"));
+document.getElementById("skyviewBtn").addEventListener("click", () => setMapType("skyview"));
+
+function closeCatPanel() {
+  document.getElementById("catPanel").classList.remove("open");
+  document.getElementById("catMoreBtn").classList.remove("open");
+}
+
+function selectCategory(catCode) {
+  closeCatPanel();
+  if (catCode === currentCat) return;
+  currentCat = catCode;
+  document.querySelectorAll(".cat-chip, .cat-grid-item").forEach(b => {
+    b.classList.toggle("active", b.dataset.cat === catCode);
+  });
+  if (map) {
+    const c = map.getCenter();
+    searchNearby({ lat: c.getLat(), lng: c.getLng() }, currentCat);
+  }
+}
+
+document.querySelectorAll(".cat-chip, .cat-grid-item:not([disabled])").forEach(btn => {
+  btn.addEventListener("click", () => selectCategory(btn.dataset.cat));
+});
+
+document.getElementById("catMoreBtn").addEventListener("click", () => {
+  const panel = document.getElementById("catPanel");
+  const btn = document.getElementById("catMoreBtn");
+  const willOpen = !panel.classList.contains("open");
+  panel.classList.toggle("open", willOpen);
+  btn.classList.toggle("open", willOpen);
+});
+
+function buildDirectionUrl(place) {
+  return `https://map.kakao.com/link/to/${encodeURIComponent(place.place_name)},${place.y},${place.x}`;
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tabName));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("hidden", p.id !== `tab-${tabName}`));
+  if (tabName === "roadview") loadRoadview(currentSheetPlace);
+}
+document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+
+function loadRoadview(place) {
+  if (!place) return;
+  const key = `${place.x},${place.y}`;
+  if (roadviewLoadedForKey === key) return;
+  roadviewLoadedForKey = key;
+
+  const container = document.getElementById("roadview");
+  const emptyMsg = document.getElementById("roadviewEmpty");
+  container.classList.remove("hidden");
+  emptyMsg.classList.remove("show");
+
+  if (!roadviewInstance) roadviewInstance = new kakao.maps.Roadview(container);
+  const roadviewClient = new kakao.maps.RoadviewClient();
+  const position = new kakao.maps.LatLng(place.y, place.x);
+  roadviewClient.getNearestPanoId(position, 50, panoId => {
+    if (panoId === null) {
+      container.classList.add("hidden");
+      emptyMsg.classList.add("show");
+      return;
+    }
+    roadviewInstance.setPanoId(panoId, position);
+  });
+}
+
+// apis.data.go.kr은 브라우저 CORS를 허용하지 않아 직접 호출이 막힌다.
+// 대신 GitHub Actions가 주기적으로 이 API를 서버에서 호출해 같은 저장소의
+// data/lib-index.json, data/lib-seats.json으로 스냅샷을 남기고,
+// 여기서는 같은 오리진의 그 파일을 읽는다(20분 간격 갱신, 완전한 실시간은 아님).
+let libraryIndexPromise = null;
+function fetchLibraryIndex() {
+  if (!libraryIndexPromise) {
+    libraryIndexPromise = fetch("data/lib-index.json")
+      .then(res => res.json())
+      .then(data => data.items || [])
+      .catch(() => []);
+  }
+  return libraryIndexPromise;
+}
+
+let librarySeatsPromise = null;
+function fetchLibrarySeatSnapshot() {
+  if (!librarySeatsPromise) {
+    librarySeatsPromise = fetch("data/lib-seats.json")
+      .then(res => res.json())
+      .catch(() => ({ generatedAt: null, items: [] }));
+  }
+  return librarySeatsPromise;
+}
+
+function distanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = d => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+async function findMatchingLibrary(place) {
+  const index = await fetchLibraryIndex();
+  const placeLat = parseFloat(place.y);
+  const placeLng = parseFloat(place.x);
+  let best = null;
+  let bestDist = Infinity;
+  index.forEach(lib => {
+    const d = distanceMeters(placeLat, placeLng, parseFloat(lib.lat), parseFloat(lib.lot));
+    if (d < bestDist) {
+      bestDist = d;
+      best = lib;
+    }
+  });
+  return best && bestDist <= 400 ? best : null;
+}
+
+async function fetchLibrarySeatRows(lib) {
+  const snapshot = await fetchLibrarySeatSnapshot();
+  // pblibId는 전국 고유값이 아니라 지역(stdgCd)별로 재사용되는 번호라
+  // stdgCd까지 같이 맞아야 같은 도서관이다.
+  const rows = (snapshot.items || []).filter(
+    r => r.pblibId === lib.pblibId && r.stdgCd === lib.stdgCd
+  );
+  return { rows, generatedAt: snapshot.generatedAt };
+}
+
+function formatSnapshotTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = n => String(n).padStart(2, "0");
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())} 기준`;
+}
+
+let libSeatRequestToken = 0;
+async function loadLibrarySeatInfo(place) {
+  const panel = document.getElementById("libSeats");
+  const body = document.getElementById("libSeatsBody");
+  panel.classList.remove("hidden");
+  body.innerHTML = `<div class="lib-seat-empty">좌석 정보 불러오는 중…</div>`;
+  const token = ++libSeatRequestToken;
+
+  const lib = await findMatchingLibrary(place);
+  if (token !== libSeatRequestToken) return;
+  if (!lib) {
+    body.innerHTML = `<div class="lib-seat-empty">이 도서관은 잔여 좌석 정보가 제공되지 않습니다.</div>`;
+    return;
+  }
+
+  let rows = [];
+  let generatedAt = null;
+  try {
+    ({ rows, generatedAt } = await fetchLibrarySeatRows(lib));
+  } catch (e) {
+    rows = [];
+  }
+  if (token !== libSeatRequestToken) return;
+  if (!rows.length) {
+    body.innerHTML = `<div class="lib-seat-empty">잔여 좌석 정보가 없습니다.</div>`;
+    return;
+  }
+  const timeLabel = formatSnapshotTime(generatedAt);
+  body.innerHTML =
+    (timeLabel ? `<div class="lib-seat-time">${timeLabel}</div>` : "") +
+    rows
+      .map(
+        r => `
+    <div class="lib-seat-row">
+      <span>${r.rdrmNm}${r.bldgFlrExpln ? ` (${r.bldgFlrExpln})` : ""}</span>
+      <span><b>${r.rmndSeatCnt || "-"}</b> / ${r.tseatCnt || "-"}석 남음</span>
+    </div>`
+      )
+      .join("");
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+function speakEnglish(text) {
+  if (!text || !("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.63;
+  speechSynthesis.speak(utter);
+}
+
+function openSheet(place, catCode) {
+  currentSheetPlace = place;
+  roadviewLoadedForKey = null;
+  switchTab("info");
+
+  document.getElementById("placeName").textContent = place.place_name;
+  document.getElementById("placeAddr").textContent = place.road_address_name || place.address_name || "";
+  document.getElementById("infoPhone").textContent = place.phone ? `📞 ${place.phone}` : "전화번호 정보 없음";
+  document.getElementById("directionBtn").href = buildDirectionUrl(place);
+
+  const priceLinkBtn = document.getElementById("priceLinkBtn");
+  if (catCode === "OL7" && place.place_url) {
+    priceLinkBtn.href = place.place_url;
+    priceLinkBtn.classList.remove("hidden");
+  } else {
+    priceLinkBtn.classList.add("hidden");
+  }
+
+  const trainingAppBtn = document.getElementById("trainingAppBtn");
+  if (TRAINING_APP_URL[catCode]) {
+    trainingAppBtn.href = TRAINING_APP_URL[catCode];
+    trainingAppBtn.classList.remove("hidden");
+  } else {
+    trainingAppBtn.classList.add("hidden");
+  }
+
+  const libSeats = document.getElementById("libSeats");
+  if (catCode === "LIB") {
+    loadLibrarySeatInfo(place);
+  } else {
+    libSeats.classList.add("hidden");
+  }
+
+  const list = document.getElementById("sceneList");
+  list.innerHTML = "";
+  (SCENES[catCode] || []).forEach(scene => {
+    const item = document.createElement("div");
+    item.className = "scene-item";
+    item.innerHTML = `
+      <div class="scene-item-head">
+        <div>
+          <div class="scene-title-ko">${scene.titleKo}</div>
+          <div class="scene-title-en">${scene.titleEn}</div>
+        </div>
+        <div class="scene-arrow">▾</div>
+      </div>
+      <div class="scene-body">
+        ${scene.lines.map(l => `
+          <div class="line ${l.who === "clerk" ? "clerk" : "customer"}">
+            <div class="who">${l.who === "clerk" ? (STAFF_LABEL[catCode] || "직원") : (CUSTOMER_LABEL[catCode] || "손님")}</div>
+            <div class="bubble">
+              <div class="en-row">
+                <div class="en">${l.en}</div>
+                <button type="button" class="speak-btn" data-en="${escAttr(l.en)}" aria-label="영어 발음 듣기">🔊</button>
+              </div>
+              ${l.pron ? `<div class="pron">${l.pron}</div>` : ""}
+              <div class="ko">${l.ko}</div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+    item.querySelector(".scene-item-head").addEventListener("click", () => {
+      item.classList.toggle("open");
+    });
+    item.querySelectorAll(".speak-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        speakEnglish(btn.dataset.en);
+      });
+    });
+    list.appendChild(item);
+  });
+
+  document.getElementById("sheet").classList.add("open");
+  document.getElementById("sheetOverlay").classList.add("open");
+}
+
+function closeSheet() {
+  document.getElementById("sheet").classList.remove("open");
+  document.getElementById("sheetOverlay").classList.remove("open");
+}
+document.getElementById("sheetClose").addEventListener("click", closeSheet);
+document.getElementById("sheetOverlay").addEventListener("click", closeSheet);
+
+document.getElementById("locateBtn").addEventListener("click", () => {
+  locateUser(true);
+});
+
+function locateUser(recenter) {
+  if (!navigator.geolocation) {
+    if (!map) initMap(DEFAULT_CENTER);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (!map) {
+        initMap(center);
+      } else {
+        setMyLocationMarker(center);
+        if (recenter) map.setCenter(new kakao.maps.LatLng(center.lat, center.lng));
+      }
+    },
+    () => {
+      if (!map) initMap(DEFAULT_CENTER);
+    },
+    { timeout: 5000 }
+  );
+}
+
+// 즉석 번역 결과의 영어 문장에 대한 대략적인 한글 발음 표기.
+// 미리 준비된 대화의 발음은 사람이 직접 만든 것이고, 이건 규칙 기반 추정치라 부정확할 수 있다.
+const PRON_WORD_DICT = {
+  a: "어", an: "언", the: "더", is: "이즈", are: "아", am: "앰", i: "아이", you: "유",
+  he: "히", she: "쉬", it: "잇", "it's": "잇츠", this: "디스", that: "댓", these: "디즈", those: "도즈",
+  my: "마이", your: "유어", his: "히즈", her: "헐", our: "아워", their: "데어",
+  what: "왓", "what's": "왓츠", where: "웨어", "where's": "웨얼즈", when: "웬", who: "후", why: "와이", how: "하우",
+  can: "캔", "can't": "캔트", could: "쿠드", "could you": "쿠쥬", would: "우드", will: "윌", "i'll": "아일",
+  shall: "쉘", should: "슈드", do: "두", does: "더즈", did: "디드", "don't": "돈트", "doesn't": "더즌트",
+  have: "해브", has: "해즈", had: "해드", "i've": "아이브", want: "원트", like: "라이크", need: "니드",
+  get: "겟", go: "고", going: "고잉", to: "투", for: "포", with: "위드", and: "앤", or: "오어", but: "벗",
+  not: "낫", no: "노", yes: "예스", ok: "오케이", okay: "오케이", sure: "슈어", here: "히어", there: "데어",
+  right: "라잇", left: "레프트", please: "플리즈", sorry: "쏘리", excuse: "익스큐즈", me: "미", help: "헬프",
+  much: "머치", many: "매니", time: "타임", today: "투데이", now: "나우", good: "굿",
+  morning: "모닝", afternoon: "애프터눈", evening: "이브닝", hi: "하이", hello: "헬로", bye: "바이",
+  thank: "땡", thanks: "땡스", "thank you": "땡큐", welcome: "웰컴", of: "오브", in: "인", on: "온", at: "앳",
+  by: "바이", from: "프롬", up: "업", down: "다운", out: "아웃", about: "어바웃", if: "이프", so: "쏘",
+  just: "저스트", only: "온리", also: "얼소", very: "베리", too: "투", more: "모어", some: "섬", any: "애니",
+  all: "올", one: "원", two: "투", three: "쓰리", first: "퍼스트", next: "넥스트", last: "라스트",
+  minute: "미닛", hour: "아워", day: "데이", week: "윅", money: "머니", pay: "페이", card: "카드",
+  cash: "캐시", price: "프라이스", free: "프리", open: "오픈", close: "클로즈", closed: "클로즈드",
+  near: "니어", far: "파", straight: "스트레이트", ahead: "어헤드", corner: "코너", floor: "플로어",
+  room: "룸", water: "워터", restroom: "레스트룸", bathroom: "배스룸", toilet: "토일렛", phone: "폰",
+  number: "넘버", address: "어드레스", name: "네임", id: "아이디", ticket: "티켓", bag: "백", box: "박스",
+  bottle: "바틀", size: "사이즈", big: "빅", small: "스몰", hot: "핫", cold: "콜드", ice: "아이스",
+  drink: "드링크", food: "푸드", eat: "잇", order: "오더", menu: "메뉴", table: "테이블", seat: "시트",
+  chair: "체어", book: "북", buy: "바이", sell: "셀", discount: "디스카운트", receipt: "리시트",
+  return: "리턴", exchange: "익스체인지", wifi: "와이파이", password: "패스워드", wait: "웨이트",
+  waiting: "웨이팅", line: "라인", station: "스테이션", train: "트레인", bus: "버스", taxi: "택시",
+  car: "카", park: "파크", parking: "파킹", street: "스트릿", building: "빌딩", office: "오피스",
+  meeting: "미팅", work: "워크", job: "잡", team: "팀", "today's": "투데이즈", tomorrow: "터마로우",
+  yesterday: "예스터데이", weekend: "위켄드", schedule: "스케줄", email: "이메일", call: "콜",
+  computer: "컴퓨터", file: "파일", check: "첵", report: "리포트", deadline: "데드라인",
+  problem: "프라블럼", around: "어라운드", area: "에어리어", nearby: "니어바이", walk: "워크",
+  find: "파인드", look: "룩", know: "노우", think: "씽크", come: "컴", back: "백", way: "웨이",
+  place: "플레이스", show: "쇼", tell: "텔", say: "세이", speak: "스피크", talk: "톡",
+  give: "기브", take: "테이크", make: "메이크", stay: "스테이", leave: "리브", start: "스타트",
+  finish: "피니시", late: "레이트", early: "얼리"
+};
+
+function transliterateWord(rawWord) {
+  const clean = rawWord.toLowerCase().replace(/[^a-z']/g, "");
+  if (!clean) return "";
+  if (PRON_WORD_DICT[clean]) return PRON_WORD_DICT[clean];
+  // 사전에 없으면 복수형(-s, -es)을 벗겨서 한 번 더 찾아본다.
+  if (clean.endsWith("es") && PRON_WORD_DICT[clean.slice(0, -2)]) return PRON_WORD_DICT[clean.slice(0, -2)] + "즈";
+  if (clean.endsWith("s") && PRON_WORD_DICT[clean.slice(0, -1)]) return PRON_WORD_DICT[clean.slice(0, -1)] + "즈";
+
+  const DIGRAPHS = [
+    [/tion$/, "션"], [/sion$/, "젼"],
+    [/ight/g, "아이트"], [/ough/g, "오"], [/augh/g, "애프"], [/eigh/g, "에이"],
+    [/dge/g, "지"], [/tch/g, "치"], [/ck/g, "크"], [/qu/g, "쿠"],
+    [/ch/g, "치"], [/sh/g, "쉬"], [/th/g, "쓰"], [/ph/g, "프"], [/wh/g, "워"], [/ng/g, "응"],
+    [/ee/g, "이"], [/ea/g, "이"], [/oo/g, "우"], [/ou/g, "아우"], [/ow/g, "오우"],
+    [/ay/g, "에이"], [/ai/g, "에이"], [/oy/g, "오이"], [/oi/g, "오이"],
+    [/au/g, "오"], [/aw/g, "오"],
+    [/er/g, "어"], [/ir/g, "어"], [/ur/g, "어"], [/ar/g, "아"], [/or/g, "오"],
+    [/a/g, "아"], [/e/g, "에"], [/i/g, "이"], [/o/g, "오"], [/u/g, "어"], [/y/g, "이"],
+    [/b/g, "브"], [/c/g, "크"], [/d/g, "드"], [/f/g, "프"], [/g/g, "그"], [/h/g, "흐"],
+    [/j/g, "즈"], [/k/g, "크"], [/l/g, "르"], [/m/g, "므"], [/n/g, "느"], [/p/g, "프"],
+    [/r/g, ""], [/s/g, "스"], [/t/g, "트"], [/v/g, "브"], [/w/g, "우"], [/x/g, "스"], [/z/g, "즈"]
+  ];
+
+  let result = clean.replace(/'/g, "");
+  for (const [pattern, replacement] of DIGRAPHS) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+}
+
+function guessKoreanPronunciation(englishText) {
+  return englishText
+    .split(/\s+/)
+    .map(token => {
+      const trailingPunct = (token.match(/[.,!?]+$/) || [""])[0];
+      const core = token.slice(0, token.length - trailingPunct.length);
+      return transliterateWord(core) + trailingPunct;
+    })
+    .filter(Boolean)
+    .join(" ");
+}
+
+// 즉석 번역 패널
+const translateOverlay = document.getElementById("translateOverlay");
+const translateModal = document.getElementById("translateModal");
+const translateInput = document.getElementById("translateInput");
+const translateSrcLang = document.getElementById("translateSrcLang");
+const translateOutMode = document.getElementById("translateOutMode");
+const translateGoBtn = document.getElementById("translateGoBtn");
+const translateResult = document.getElementById("translateResult");
+const translateEnBlock = document.getElementById("translateEnBlock");
+const translateEn = document.getElementById("translateEn");
+const translatePron = document.getElementById("translatePron");
+const translateKoBlock = document.getElementById("translateKoBlock");
+const translateKo = document.getElementById("translateKo");
+const translateError = document.getElementById("translateError");
+const translateSpeakBtn = document.getElementById("translateSpeakBtn");
+
+function openTranslateModal() {
+  translateOverlay.classList.add("open");
+  translateModal.classList.add("open");
+  translateInput.focus();
+}
+function closeTranslateModal() {
+  translateOverlay.classList.remove("open");
+  translateModal.classList.remove("open");
+}
+document.getElementById("translateToggleBtn").addEventListener("click", openTranslateModal);
+document.getElementById("translateCloseBtn").addEventListener("click", closeTranslateModal);
+translateOverlay.addEventListener("click", closeTranslateModal);
+
+// 모국어와 같은 언어로 변환하는 건 의미가 없으니(한국어→한국어, 영어→영어) 그 옵션은 막는다
+function syncTranslateOutModeOptions() {
+  const isKo = translateSrcLang.value === "ko";
+  const isEn = translateSrcLang.value === "en";
+  translateOutMode.querySelector('option[value="ko"]').disabled = isKo;
+  translateOutMode.querySelector('option[value="en"]').disabled = isEn;
+  translateOutMode.querySelector('option[value="both"]').disabled = isKo || isEn;
+  if (isKo && translateOutMode.value !== "en") translateOutMode.value = "en";
+  if (isEn && translateOutMode.value !== "ko") translateOutMode.value = "ko";
+}
+translateSrcLang.addEventListener("change", syncTranslateOutModeOptions);
+syncTranslateOutModeOptions();
+
+async function fetchGoogleTranslation(text, sourceLang, targetLang) {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("google http " + res.status);
+  const data = await res.json();
+  const result = data && data[0] ? data[0].map(seg => seg[0]).join("") : "";
+  if (!result) throw new Error("google empty result");
+  return result;
+}
+
+async function fetchMyMemoryTranslation(text, sourceLang, targetLang) {
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const result = data && data.responseData && data.responseData.translatedText;
+  if (!result) throw new Error("mymemory empty result");
+  return result;
+}
+
+// 품질이 더 좋은 구글 번역을 우선 쓰고, 막히면(비공식 API라 언제든 막힐 수 있음) MyMemory로 대체
+async function translateText(text, sourceLang, targetLang) {
+  try {
+    return await fetchGoogleTranslation(text, sourceLang, targetLang);
+  } catch (e) {
+    return await fetchMyMemoryTranslation(text, sourceLang, targetLang);
+  }
+}
+
+function containsHangul(str) {
+  return /[가-힣]/.test(str);
+}
+function containsLatin(str) {
+  return /[a-zA-Z]/.test(str);
+}
+const TRANSLATE_KO_FAILED_MSG = "⚠️ 이 문장은 한국어로 정확히 변환되지 않았어요. 표현을 바꿔서 다시 시도해보세요.";
+const TRANSLATE_EN_FAILED_MSG = "이 문장은 영어로 정확히 변환되지 않았어요. 표현을 바꿔서 다시 시도해보세요.";
+
+translateGoBtn.addEventListener("click", async () => {
+  const text = translateInput.value.trim();
+  if (!text) return;
+
+  const srcLang = translateSrcLang.value;
+  const outMode = translateOutMode.value;
+  const wantEnDisplay = (outMode === "both" || outMode === "en") && srcLang !== "en";
+  const wantKo = (outMode === "both" || outMode === "ko") && srcLang !== "ko";
+  // 한국어가 필요하면 직접(모국어->한국어) 대신 영어를 한 번 거쳐서 변환한다(실사용 테스트로
+  // 확인: 손해는 없고 일본어 등 일부 언어에서 품질이 더 좋아짐). 영어 자체가 소스면 그대로 사용.
+  const needEnForPivot = wantKo && srcLang !== "en";
+
+  translateError.classList.add("hidden");
+  translateResult.classList.add("hidden");
+  translateEnBlock.classList.add("hidden");
+  translateKoBlock.classList.add("hidden");
+  translateGoBtn.disabled = true;
+  translateGoBtn.textContent = "변환 중…";
+
+  let en = null;
+  if (wantEnDisplay || needEnForPivot) {
+    try { en = await translateText(text, srcLang, "en"); } catch (e) { en = null; }
+  }
+
+  let ko = null;
+  if (wantKo) {
+    const koSourceText = srcLang === "en" ? text : en;
+    if (koSourceText) {
+      try { ko = await translateText(koSourceText, "en", "ko"); } catch (e) { ko = null; }
+    }
+  }
+
+  let shownAny = false;
+
+  if (wantEnDisplay) {
+    const enOk = en && containsLatin(en);
+    translateEn.textContent = enOk ? en : TRANSLATE_EN_FAILED_MSG;
+    translateEn.classList.toggle("failed", !enOk);
+    translatePron.textContent = enOk ? guessKoreanPronunciation(en) : "";
+    translateEnBlock.classList.remove("hidden");
+    shownAny = true;
+  }
+  if (wantKo) {
+    const koOk = ko && containsHangul(ko);
+    translateKo.textContent = koOk ? ko : TRANSLATE_KO_FAILED_MSG;
+    translateKo.classList.toggle("failed", !koOk);
+    translateKoBlock.classList.remove("hidden");
+    shownAny = true;
+  }
+
+  if (shownAny) {
+    translateResult.classList.remove("hidden");
+  } else {
+    translateError.textContent = "번역에 실패했습니다. 잠시 후 다시 시도해주세요.";
+    translateError.classList.remove("hidden");
+  }
+  translateGoBtn.disabled = false;
+  translateGoBtn.textContent = "변환하기";
+});
+
+// 음성 입력(마이크) — 브라우저 내장 Web Speech API, 지원 안 되면 버튼 비활성화
+const translateMicBtn = document.getElementById("translateMicBtn");
+const translateMicHint = document.getElementById("translateMicHint");
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+const TRANSLATE_SPEECH_LANG = {
+  ko: "ko-KR", en: "en-US", vi: "vi-VN", zh: "zh-CN", tl: "fil-PH", th: "th-TH",
+  mn: "mn-MN", ru: "ru-RU", km: "km-KH", uz: "uz-UZ", ne: "ne-NP", ja: "ja-JP"
+};
+
+if (!SpeechRecognitionCtor) {
+  translateMicBtn.disabled = true;
+  translateMicBtn.title = "이 브라우저는 음성 입력을 지원하지 않습니다";
+} else {
+  let recognizer = null;
+  let isListening = false;
+
+  function showMicHint(msg, isError) {
+    translateMicHint.textContent = msg;
+    translateMicHint.classList.toggle("error", !!isError);
+    translateMicHint.classList.toggle("hidden", !msg);
+  }
+
+  translateMicBtn.addEventListener("click", () => {
+    if (isListening) {
+      recognizer && recognizer.stop();
+      return;
+    }
+    showMicHint("", false);
+    recognizer = new SpeechRecognitionCtor();
+    recognizer.lang = TRANSLATE_SPEECH_LANG[translateSrcLang.value] || "ko-KR";
+    recognizer.interimResults = false;
+    recognizer.maxAlternatives = 1;
+    recognizer.onstart = () => {
+      isListening = true;
+      translateMicBtn.classList.add("listening");
+      showMicHint("듣고 있어요…", false);
+    };
+    recognizer.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      translateInput.value = transcript;
+      showMicHint("", false);
+    };
+    recognizer.onerror = (e) => {
+      showMicHint("음성 인식에 실패했어요. 이 언어는 지원되지 않을 수 있어요 — 직접 입력해주세요.", true);
+    };
+    recognizer.onend = () => {
+      isListening = false;
+      translateMicBtn.classList.remove("listening");
+    };
+    try {
+      recognizer.start();
+    } catch (e) {
+      showMicHint("음성 인식을 시작할 수 없어요. 직접 입력해주세요.", true);
+    }
+  });
+}
+
+translateSpeakBtn.addEventListener("click", () => {
+  speakEnglish(translateEn.textContent);
+});
+
+function loadKakaoSdk(appKey) {
+  const script = document.createElement("script");
+  script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`;
+  script.onload = () => kakao.maps.load(() => locateUser(false));
+  document.head.appendChild(script);
+}
+
+loadKakaoSdk("c6f8e6e19945b387fd533e6e8d98735b");
+</script>
+</body>
+</html>
