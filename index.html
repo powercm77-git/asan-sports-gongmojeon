@@ -71,6 +71,23 @@
     .title-left { font-size: 14px; }
     .title-right { font-size: 10.5px; }
   }
+  /* 직원 교육자료 바로가기 — 예전에는 지도에서 복합스포츠센터를 눌러야만 보였다.
+     심사자 등 누구나 바로 확인할 수 있도록 헤더에 상시 노출한다(2026-09-19). */
+  .header-edu-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .header-edu-link:active, .header-edu-link:hover { background: rgba(255,255,255,0.3); }
 
   .category-bar {
     display: flex;
@@ -478,6 +495,7 @@
         <span class="title-right">유관기관 다국어 이용안내</span>
       </div>
       <div class="subtitle">지도에서 시설을 선택하면 다국어 대화 예시가 제공됩니다</div>
+      <a class="header-edu-link" href="edu/sports-center.html" target="_blank" rel="noopener">📖 복합스포츠센터 직원 교육자료 바로가기</a>
     </header>
 
     <div class="category-bar" id="categoryBar">
@@ -498,6 +516,9 @@
         <button class="cat-chip" data-cat="HP8">🏥 병원</button>
         <button class="cat-chip" data-cat="PM9">💊 약국</button>
         <button class="cat-chip" data-cat="TRN">🚉 교통시설</button>
+        <button class="cat-chip" data-cat="CE7">☕ 카페</button>
+        <button class="cat-chip" data-cat="FD6">🍽️ 음식점</button>
+        <button class="cat-chip" data-cat="CS2">🏪 편의점</button>
       </div>
       <button class="cat-more-btn" id="catMoreBtn"><span class="cat-ic">⋯</span><span>주변</span></button>
     </div>
@@ -519,6 +540,9 @@
         <button class="cat-grid-item" data-cat="HP8"><span class="cat-grid-ic">🏥</span>병원</button>
         <button class="cat-grid-item" data-cat="PM9"><span class="cat-grid-ic">💊</span>약국</button>
         <button class="cat-grid-item" data-cat="TRN"><span class="cat-grid-ic">🚉</span>교통시설</button>
+        <button class="cat-grid-item" data-cat="CE7"><span class="cat-grid-ic">☕</span>카페</button>
+        <button class="cat-grid-item" data-cat="FD6"><span class="cat-grid-ic">🍽️</span>음식점</button>
+        <button class="cat-grid-item" data-cat="CS2"><span class="cat-grid-ic">🏪</span>편의점</button>
       </div>
     </div>
 
@@ -2070,9 +2094,231 @@ const SCENES = {
       ]
     }
   ],
+  CE7: [
+    {
+      titleKo: "음료를 주문할 때",
+      titleEn: "Ordering a drink",
+      lines: [
+        { who: "clerk", en: "What can I get for you?", pron: "왓 캔 아이 겟 포 유?", ko: "무엇을 드릴까요?" },
+        { who: "customer", en: "One iced americano, please.", pron: "원 아이스드 아메리카노, 플리즈.", ko: "아이스 아메리카노 한 잔 주세요." }
+      ]
+    },
+    {
+      titleKo: "사이즈를 고를 때",
+      titleEn: "Choosing a size",
+      lines: [
+        { who: "clerk", en: "Would you like a small or a large?", pron: "우쥬 라익 어 스몰 오어 어 라지?", ko: "작은 사이즈로 드릴까요, 큰 사이즈로 드릴까요?" },
+        { who: "customer", en: "Large, please.", pron: "라지, 플리즈.", ko: "큰 사이즈로 주세요." }
+      ]
+    },
+    {
+      titleKo: "매장에서 먹을지 포장할지 물을 때",
+      titleEn: "For here or to go",
+      lines: [
+        { who: "clerk", en: "For here or to go?", pron: "포 히어 오어 투 고?", ko: "매장에서 드시나요, 포장이신가요?" },
+        { who: "customer", en: "To go, please.", pron: "투 고, 플리즈.", ko: "포장이요." }
+      ]
+    },
+    {
+      titleKo: "와이파이 비밀번호를 물을 때",
+      titleEn: "Asking for the Wi-Fi password",
+      lines: [
+        { who: "customer", en: "Could I get the Wi-Fi password?", pron: "쿠다이 겟 더 와이파이 패스워드?", ko: "와이파이 비밀번호 좀 알 수 있을까요?" },
+        { who: "clerk", en: "It's posted on the wall by the counter.", pron: "잇츠 포스티드 온 더 월 바이 더 카운터.", ko: "카운터 옆 벽에 붙어 있습니다." }
+      ]
+    },
+    {
+      titleKo: "진동벨을 받을 때",
+      titleEn: "Getting a buzzer",
+      lines: [
+        { who: "clerk", en: "It'll buzz when your order is ready.", pron: "잇일 버즈 웬 유어 오더 이즈 레디.", ko: "준비되면 진동벨이 울립니다." },
+        { who: "customer", en: "Okay, thank you.", pron: "오케이, 땡큐.", ko: "네, 감사합니다." }
+      ]
+    },
+    {
+      titleKo: "개인 컵을 가져왔을 때",
+      titleEn: "Bringing your own cup",
+      lines: [
+        { who: "customer", en: "Can I use my own cup?", pron: "캔 아이 유즈 마이 오운 컵?", ko: "제 컵 써도 될까요?" },
+        { who: "clerk", en: "Sure, that's no problem.", pron: "슈어, 댓츠 노 프라블럼.", ko: "네, 괜찮습니다." }
+      ]
+    },
+    {
+      titleKo: "디카페인을 요청할 때",
+      titleEn: "Asking for decaf",
+      lines: [
+        { who: "customer", en: "Could I get this decaf, please?", pron: "쿠다이 겟 디스 디카프, 플리즈?", ko: "이거 디카페인으로 해주시겠어요?" },
+        { who: "clerk", en: "Sure, no problem.", pron: "슈어, 노 프라블럼.", ko: "네, 알겠습니다." }
+      ]
+    },
+    {
+      titleKo: "얼음을 조금만 넣어달라고 할 때",
+      titleEn: "Asking for less ice",
+      lines: [
+        { who: "customer", en: "Could I get less ice, please?", pron: "쿠다이 겟 레스 아이스, 플리즈?", ko: "얼음 조금만 넣어주시겠어요?" },
+        { who: "clerk", en: "Sure, I'll do that.", pron: "슈어, 아일 두 댓.", ko: "네, 그렇게 해드릴게요." }
+      ]
+    },
+    {
+      titleKo: "빈자리가 있는지 물을 때",
+      titleEn: "Asking if a seat is free",
+      lines: [
+        { who: "customer", en: "Is this seat taken?", pron: "이즈 디스 시트 테이큰?", ko: "여기 자리 있나요?" },
+        { who: "clerk", en: "No, please go ahead.", pron: "노, 플리즈 고 어헤드.", ko: "아니요, 앉으셔도 됩니다." }
+      ]
+    }
+  ],
+  FD6: [
+    {
+      titleKo: "자리를 안내받을 때",
+      titleEn: "Being seated",
+      lines: [
+        { who: "clerk", en: "How many people?", pron: "하우 매니 피플?", ko: "몇 분이세요?" },
+        { who: "customer", en: "Two people, please.", pron: "투 피플, 플리즈.", ko: "두 명이요." }
+      ]
+    },
+    {
+      titleKo: "메뉴를 주문할 때",
+      titleEn: "Ordering food",
+      lines: [
+        { who: "customer", en: "Could I see the menu, please?", pron: "쿠다이 씨 더 메뉴, 플리즈?", ko: "메뉴판 좀 보여주시겠어요?" },
+        { who: "clerk", en: "Here you go. Let me know when you're ready.", pron: "히어 유 고. 렛 미 노우 웬 유어 레디.", ko: "여기 있습니다. 정하시면 불러주세요." }
+      ]
+    },
+    {
+      titleKo: "맵기 정도를 물을 때",
+      titleEn: "Asking about spice level",
+      lines: [
+        { who: "customer", en: "Is this dish spicy?", pron: "이즈 디스 디쉬 스파이시?", ko: "이 음식 매운가요?" },
+        { who: "clerk", en: "It's a bit spicy, but we can make it milder.", pron: "잇츠 어 빗 스파이시, 벗 위 캔 메이크 잇 마일더.", ko: "조금 매운데, 덜 맵게 해드릴 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "알레르기 재료를 물을 때",
+      titleEn: "Asking about allergens",
+      lines: [
+        { who: "customer", en: "Does this contain peanuts?", pron: "더즈 디스 컨테인 피넛츠?", ko: "이 음식에 땅콩이 들어가나요?" },
+        { who: "clerk", en: "Let me check with the kitchen for you.", pron: "렛 미 첵 위드 더 키친 포 유.", ko: "주방에 확인해서 알려드릴게요." }
+      ]
+    },
+    {
+      titleKo: "계산할 때",
+      titleEn: "Paying the bill",
+      lines: [
+        { who: "customer", en: "Could I get the bill, please?", pron: "쿠다이 겟 더 빌, 플리즈?", ko: "계산서 좀 주시겠어요?" },
+        { who: "clerk", en: "Sure, would you like to pay by card or cash?", pron: "슈어, 우쥬 라익 투 페이 바이 카드 오어 캐시?", ko: "네, 카드로 하시겠어요, 현금으로 하시겠어요?" }
+      ]
+    },
+    {
+      titleKo: "물을 더 요청할 때",
+      titleEn: "Asking for more water",
+      lines: [
+        { who: "customer", en: "Could I get some more water, please?", pron: "쿠다이 겟 섬 모어 워터, 플리즈?", ko: "물 좀 더 주시겠어요?" },
+        { who: "clerk", en: "Sure, one moment.", pron: "슈어, 원 모먼트.", ko: "네, 잠시만요." }
+      ]
+    },
+    {
+      titleKo: "남은 음식을 포장할 때",
+      titleEn: "Packing up leftovers",
+      lines: [
+        { who: "customer", en: "Could I get this to go, please?", pron: "쿠다이 겟 디스 투 고, 플리즈?", ko: "이거 포장해주시겠어요?" },
+        { who: "clerk", en: "Sure, I'll pack it for you.", pron: "슈어, 아일 팩 잇 포 유.", ko: "네, 포장해드릴게요." }
+      ]
+    },
+    {
+      titleKo: "반찬을 더 요청할 때",
+      titleEn: "Asking for more side dishes",
+      lines: [
+        { who: "customer", en: "Could I get more of this side dish?", pron: "쿠다이 겟 모어 오브 디스 사이드 디쉬?", ko: "이 반찬 좀 더 주시겠어요?" },
+        { who: "clerk", en: "Sure, I'll bring some more.", pron: "슈어, 아일 브링 섬 모어.", ko: "네, 더 가져다드릴게요." }
+      ]
+    },
+    {
+      titleKo: "화장실 위치를 물을 때",
+      titleEn: "Asking where the restroom is",
+      lines: [
+        { who: "customer", en: "Where's the restroom?", pron: "웨얼즈 더 레스트룸?", ko: "화장실이 어디예요?" },
+        { who: "clerk", en: "It's down the hall, on the left.", pron: "잇츠 다운 더 홀, 온 더 레프트.", ko: "복도 안쪽 왼편에 있습니다." }
+      ]
+    }
+  ],
+  CS2: [
+    {
+      titleKo: "물건을 찾을 때",
+      titleEn: "Finding an item",
+      lines: [
+        { who: "customer", en: "Where can I find bottled water?", pron: "웨어 캔 아이 파인드 바틀드 워터?", ko: "생수는 어디 있나요?" },
+        { who: "clerk", en: "It's in the second aisle, on the left.", pron: "잇츠 인 더 세컨드 아일, 온 더 레프트.", ko: "두 번째 진열대 왼쪽에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "계산할 때",
+      titleEn: "Checking out",
+      lines: [
+        { who: "clerk", en: "Is that everything for you today?", pron: "이즈 댓 에브리씽 포 유 투데이?", ko: "이게 전부이신가요?" },
+        { who: "customer", en: "Yes, that's all.", pron: "예스, 댓츠 올.", ko: "네, 이게 전부예요." }
+      ]
+    },
+    {
+      titleKo: "봉투가 필요한지 물을 때",
+      titleEn: "Asking if a bag is needed",
+      lines: [
+        { who: "clerk", en: "Would you like a bag?", pron: "우쥬 라익 어 백?", ko: "봉투 필요하세요?" },
+        { who: "customer", en: "Yes, one bag, please.", pron: "예스, 원 백, 플리즈.", ko: "네, 하나 주세요." }
+      ]
+    },
+    {
+      titleKo: "전자레인지 이용을 물을 때",
+      titleEn: "Asking to use the microwave",
+      lines: [
+        { who: "customer", en: "Could I heat this up in the microwave?", pron: "쿠다이 히트 디스 업 인 더 마이크로웨이브?", ko: "이거 전자레인지에 데워도 될까요?" },
+        { who: "clerk", en: "Sure, it's right over there.", pron: "슈어, 잇츠 라잇 오버 데어.", ko: "네, 저쪽에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "화장실을 물을 때",
+      titleEn: "Asking for the restroom",
+      lines: [
+        { who: "customer", en: "Is there a restroom I could use?", pron: "이즈 데어 어 레스트룸 아이 쿠드 유즈?", ko: "화장실을 좀 쓸 수 있을까요?" },
+        { who: "clerk", en: "Please check the sign posted at the door.", pron: "플리즈 첵 더 사인 포스티드 앳 더 도어.", ko: "출입문에 붙어 있는 안내를 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "할인 상품인지 물을 때",
+      titleEn: "Asking if an item is on sale",
+      lines: [
+        { who: "customer", en: "Is this item on sale?", pron: "이즈 디스 아이템 온 세일?", ko: "이거 할인 상품인가요?" },
+        { who: "clerk", en: "Yes, it's discounted this week.", pron: "예스, 잇츠 디스카운티드 디스 윅.", ko: "네, 이번 주에 할인 중입니다." }
+      ]
+    },
+    {
+      titleKo: "우산을 찾을 때",
+      titleEn: "Looking for an umbrella",
+      lines: [
+        { who: "customer", en: "Do you sell umbrellas?", pron: "두 유 셀 엄브렐러즈?", ko: "우산 파나요?" },
+        { who: "clerk", en: "Yes, they're right by the door.", pron: "예스, 데얼 라잇 바이 더 도어.", ko: "네, 출입문 옆에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "ATM 위치를 물을 때",
+      titleEn: "Asking where the ATM is",
+      lines: [
+        { who: "customer", en: "Is there an ATM here?", pron: "이즈 데어 언 에이티엠 히어?", ko: "여기 ATM 있나요?" },
+        { who: "clerk", en: "Yes, it's right next to the entrance.", pron: "예스, 잇츠 라잇 넥스트 투 디 엔트런스.", ko: "네, 입구 바로 옆에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "카드 결제가 되는지 물을 때",
+      titleEn: "Asking if card payment works",
+      lines: [
+        { who: "customer", en: "Can I pay by card?", pron: "캔 아이 페이 바이 카드?", ko: "카드로 계산할 수 있나요?" },
+        { who: "clerk", en: "Yes, card payment is fine.", pron: "예스, 카드 페이먼트 이즈 파인.", ko: "네, 카드 결제 가능합니다." }
+      ]
+    }
+  ]
 };
 
-const CATEGORY_LABEL = { SPT: "체육시설", HLC: "보건소", GOV: "행정복지센터", FAM: "아산가족센터", CT1: "문화시설", LIB: "도서관", SCI: "과학관·곤충원", YTH: "청소년문화센터", JOB: "여성새일센터", CHD: "육아종합지원센터", AGR: "농업기술센터", EDU: "평생학습관", AT4: "관광시설", HP8: "병원", PM9: "약국", TRN: "교통시설" };
+const CATEGORY_LABEL = { SPT: "체육시설", HLC: "보건소", GOV: "행정복지센터", FAM: "아산가족센터", CT1: "문화시설", LIB: "도서관", SCI: "과학관·곤충원", YTH: "청소년문화센터", JOB: "여성새일센터", CHD: "육아종합지원센터", AGR: "농업기술센터", EDU: "평생학습관", AT4: "관광시설", HP8: "병원", PM9: "약국", TRN: "교통시설", CE7: "카페", FD6: "음식점", CS2: "편의점" };
 const CATEGORY_ICON = {
   SPT: { emoji: "🏟️", color: "#2E7D32" },
   HLC: { emoji: "🩺", color: "#16A34A" },
@@ -2089,7 +2335,10 @@ const CATEGORY_ICON = {
   AT4: { emoji: "🏞️", color: "#CA8A04" },
   HP8: { emoji: "🏥", color: "#2FA968" },
   PM9: { emoji: "💊", color: "#2F9AA9" },
-  TRN: { emoji: "🚉", color: "#00A651" }
+  TRN: { emoji: "🚉", color: "#00A651" },
+  CE7: { emoji: "☕", color: "#8B5E3C" },
+  FD6: { emoji: "🍽️", color: "#E8590C" },
+  CS2: { emoji: "🏪", color: "#1E88E5" }
 };
 // 도서관 마커는 카테고리 고유색 대신 좌석 정보 유무로 색을 바꾼다(2026-08-18 사용자 요청).
 const LIB_SEAT_COLOR = { available: "#16A34A", none: "#9CA3AF" };
