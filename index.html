@@ -471,7 +471,7 @@
         <span class="title-left">다(多)함께 통(通)하는 아산</span>
         <span class="title-right">유관기관 다국어 이용안내</span>
       </div>
-      <div class="subtitle">지도에서 기관을 선택하면, 그 기관에서 바로 쓸 수 있는 다국어 대화가 나타납니다</div>
+      <div class="subtitle">지도에서 기관을 선택하면 다국어 대화 예시가 제공됩니다</div>
     </header>
 
     <div class="category-bar" id="categoryBar">
@@ -620,7 +620,7 @@
     </div>
   </div>
   <div class="translate-input-wrap">
-    <textarea class="translate-input" id="translateInput" placeholder="하고 싶은 말을 입력하거나 마이크로 말하세요"></textarea>
+    <textarea class="translate-input" id="translateInput" placeholder="하고 싶은 말을 입력하거나 마이크 버튼을 눌러 말씀해 주십시오"></textarea>
     <button type="button" class="translate-mic-btn" id="translateMicBtn" aria-label="마이크로 입력">🎤</button>
   </div>
   <div class="translate-mic-hint hidden" id="translateMicHint"></div>
@@ -637,7 +637,7 @@
       <div class="translate-ko-label">한국어</div>
       <div class="ko" id="translateKo"></div>
     </div>
-    <div class="translate-note">※ 자동 번역·자동 발음이라 정확하지 않을 수 있어요. 미리 준비된 대화(정보/대화 탭)가 더 정확합니다.</div>
+    <div class="translate-note">※ 자동 번역·자동 발음은 정확하지 않을 수 있습니다. 미리 준비된 대화(정보/대화 탭)가 더 정확합니다.</div>
   </div>
   <div class="translate-error hidden" id="translateError"></div>
 </div>
@@ -1951,7 +1951,7 @@ function searchNearby(center, catCode) {
 
   const handleResults = async (results, status) => {
     if (status !== kakao.maps.services.Status.OK || !results.length) {
-      document.getElementById("mapHintText").textContent = "주변에서 찾지 못했습니다. 지도를 움직여보세요.";
+      document.getElementById("mapHintText").textContent = "주변에서 찾지 못했습니다. 지도를 이동해 주십시오.";
       clearMarkers();
       renderResultsList([], catCode);
       return;
@@ -2077,7 +2077,7 @@ function searchRegion(query) {
       if (kstatus === kakao.maps.services.Status.OK && data[0]) {
         map.setCenter(new kakao.maps.LatLng(parseFloat(data[0].y), parseFloat(data[0].x)));
       } else {
-        document.getElementById("mapHintText").textContent = "검색 결과가 없습니다. 다른 지역명으로 시도해보세요.";
+        document.getElementById("mapHintText").textContent = "검색 결과가 없습니다. 다른 지역명으로 다시 검색해 주십시오.";
       }
     });
   });
@@ -2559,8 +2559,8 @@ function containsHangul(str) {
 function containsLatin(str) {
   return /[a-zA-Z]/.test(str);
 }
-const TRANSLATE_KO_FAILED_MSG = "⚠️ 이 문장은 한국어로 정확히 변환되지 않았어요. 표현을 바꿔서 다시 시도해보세요.";
-const TRANSLATE_EN_FAILED_MSG = "이 문장은 영어로 정확히 변환되지 않았어요. 표현을 바꿔서 다시 시도해보세요.";
+const TRANSLATE_KO_FAILED_MSG = "⚠️ 이 문장은 한국어로 정확히 변환되지 않았습니다. 표현을 바꾸어 다시 시도해 주십시오.";
+const TRANSLATE_EN_FAILED_MSG = "이 문장은 영어로 정확히 변환되지 않았습니다. 표현을 바꾸어 다시 시도해 주십시오.";
 
 translateGoBtn.addEventListener("click", async () => {
   const text = translateInput.value.trim();
@@ -2615,7 +2615,7 @@ translateGoBtn.addEventListener("click", async () => {
   if (shownAny) {
     translateResult.classList.remove("hidden");
   } else {
-    translateError.textContent = "번역에 실패했습니다. 잠시 후 다시 시도해주세요.";
+    translateError.textContent = "번역에 실패했습니다. 잠시 후 다시 시도해 주십시오.";
     translateError.classList.remove("hidden");
   }
   translateGoBtn.disabled = false;
@@ -2657,7 +2657,7 @@ if (!SpeechRecognitionCtor) {
     recognizer.onstart = () => {
       isListening = true;
       translateMicBtn.classList.add("listening");
-      showMicHint("듣고 있어요…", false);
+      showMicHint("음성을 듣고 있습니다…", false);
     };
     recognizer.onresult = (e) => {
       const transcript = e.results[0][0].transcript;
@@ -2665,7 +2665,7 @@ if (!SpeechRecognitionCtor) {
       showMicHint("", false);
     };
     recognizer.onerror = (e) => {
-      showMicHint("음성 인식에 실패했어요. 이 언어는 지원되지 않을 수 있어요 — 직접 입력해주세요.", true);
+      showMicHint("음성 인식에 실패했습니다. 이 언어는 지원되지 않을 수 있습니다 — 직접 입력해 주십시오.", true);
     };
     recognizer.onend = () => {
       isListening = false;
@@ -2674,7 +2674,7 @@ if (!SpeechRecognitionCtor) {
     try {
       recognizer.start();
     } catch (e) {
-      showMicHint("음성 인식을 시작할 수 없어요. 직접 입력해주세요.", true);
+      showMicHint("음성 인식을 시작할 수 없습니다. 직접 입력해 주십시오.", true);
     }
   });
 }
