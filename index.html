@@ -221,13 +221,17 @@
   .result-name { font-size: 13.5px; font-weight: 700; }
   .result-addr { font-size: 11.5px; color: var(--sub); margin-top: 2px; }
   @media (min-width: 900px) {
-    .results-list { display: block; flex: 1; }
+    /* flex:1이면 목록이 .map-hint·.lib-legend의 flex-shrink 공간을 빼앗아 "주변 OOO 표시됨"
+       문구가 잘려 보인다(행정복지센터 17곳처럼 목록이 길 때 특히 뚜렷함). flex:none으로 목록이
+       원래 내용 높이만 차지하게 하고, 스크롤은 .sidebar-scroll의 overflow-y:auto에 맡긴다. */
+    .results-list { display: block; flex: none; }
   }
 
   #map-wrap { position: relative; flex: 1; min-height: 340px; }
   #map { position: absolute; inset: 0; }
 
   .map-hint {
+    flex: none;
     padding: 8px 14px;
     font-size: 12.5px;
     color: var(--sub);
@@ -240,6 +244,7 @@
   .map-hint-help { color: #9AA3AF; }
 
   .lib-legend {
+    flex: none;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -354,6 +359,7 @@
   .roadview-empty.show { display: block; }
 
   .scene-list { padding: 10px 14px 18px; }
+  .scene-empty { padding: 40px 20px; text-align: center; color: var(--sub); font-size: 13px; }
   .scene-item {
     border: 1px solid var(--line);
     border-radius: 12px;
@@ -471,7 +477,7 @@
         <span class="title-left">다(多)함께 통(通)하는 아산</span>
         <span class="title-right">유관기관 다국어 이용안내</span>
       </div>
-      <div class="subtitle">지도에서 기관을 선택하면 다국어 대화 예시가 제공됩니다</div>
+      <div class="subtitle">지도에서 시설을 선택하면 다국어 대화 예시가 제공됩니다</div>
     </header>
 
     <div class="category-bar" id="categoryBar">
@@ -1842,6 +1848,7 @@ const DEFAULT_CENTER = { lat: 36.7898, lng: 127.0018 }; // 충청남도 아산�
 
 let map, placesService, geocoder;
 let markers = [];
+let markerLabels = [];
 let myLocationMarker = null;
 let currentCat = "SPT";
 let currentSheetPlace = null;
@@ -1882,9 +1889,13 @@ function setMyLocationMarker(center) {
 
 function initMap(center) {
   const container = document.getElementById("map");
+  // 모바일은 화면 폭이 좁아 같은 반경이라도 보이는 시설 수가 적다. 그래서 모바일 기본 줌은
+  // 7레벨(축척 1km)로 한 단계 더 넓게, 데스크톱은 6레벨(축척 500m)로 그대로 둔다.
+  // (카카오 지도 레벨-축척 대응은 실기기에서 직접 measure: level 6 → "500m", level 7 → "1km".)
+  const initialLevel = window.innerWidth < 900 ? 7 : 6;
   map = new kakao.maps.Map(container, {
     center: new kakao.maps.LatLng(center.lat, center.lng),
-    level: 6
+    level: initialLevel
   });
   map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
   placesService = new kakao.maps.services.Places();
@@ -1929,6 +1940,26 @@ function addCityHallLabel() {
 function clearMarkers() {
   markers.forEach(m => m.setMap(null));
   markers = [];
+  markerLabels.forEach(l => l.setMap(null));
+  markerLabels = [];
+}
+
+// 마커를 눌러야만 이름이 보이던 것을, 지도에 뜬 시설 이름이 기본으로 보이도록 마커마다
+// 작은 이름표를 하나씩 더 띄운다. addCityHallLabel과 같은 CustomOverlay 방식이다.
+function buildMarkerLabel(place) {
+  const content = document.createElement("div");
+  content.textContent = place.place_name;
+  content.style.cssText =
+    "background:rgba(255,255,255,0.92);color:#1B2430;font-size:10.5px;font-weight:700;" +
+    "padding:2px 6px;border-radius:6px;white-space:nowrap;pointer-events:none;" +
+    "box-shadow:0 1px 4px rgba(0,0,0,0.2);transform:translateY(-46px);";
+  return new kakao.maps.CustomOverlay({
+    map,
+    position: new kakao.maps.LatLng(place.y, place.x),
+    content,
+    yAnchor: 1,
+    zIndex: 2
+  });
 }
 
 function searchNearby(center, catCode) {
@@ -1972,6 +2003,7 @@ function searchNearby(center, catCode) {
       });
       kakao.maps.event.addListener(marker, "click", () => openSheet(place, catCode));
       markers.push(marker);
+      markerLabels.push(buildMarkerLabel(place));
     });
     renderResultsList(items, catCode);
     document.getElementById("mapHintText").textContent = `주변 ${CATEGORY_LABEL[catCode]} ${items.length}곳 표시됨`;
@@ -2290,6 +2322,21 @@ function speakEnglish(text) {
   speechSynthesis.speak(utter);
 }
 
+// SCENES는 카테고리 코드 하나로만 묶여 있는데, 체육시설·교통시설처럼 한 카테고리 안에
+// 서로 다른 종류의 시설이 섞여 있으면 실제로는 그중 하나만을 위해 쓴 대화(그 시설에만 있는
+// 탁구장·빙상장, 기차역에만 있는 승강장 등)가 나머지 시설에도 그대로 떠 버린다. 대화 내용이
+// 그 시설의 실제 구조를 전제로 쓰여 다른 시설엔 맞지 않는 카테고리만, place_name으로 실제
+// 대상 시설이 맞는지 가려낸다(2026-09-19, 사용자가 한마음야구장에서 복합스포츠센터 대화가
+// 뜨는 것을 지적해 발견).
+function hasDedicatedScenes(catCode, place) {
+  if (catCode === "SPT") return place.place_name.includes("복합스포츠센터");
+  if (catCode === "TRN") return place.place_name.includes("역");
+  // 관광시설 대화는 현충사·외암민속마을 이름을 직접 언급하며 쓰여 있어, 온양온천 등
+  // 나머지 관광지에는 맞지 않는다.
+  if (catCode === "AT4") return place.place_name.includes("현충사") || place.place_name.includes("외암");
+  return true;
+}
+
 function openSheet(place, catCode) {
   currentSheetPlace = place;
   roadviewLoadedForKey = null;
@@ -2308,8 +2355,10 @@ function openSheet(place, catCode) {
     priceLinkBtn.classList.add("hidden");
   }
 
+  const dedicated = hasDedicatedScenes(catCode, place);
+
   const trainingAppBtn = document.getElementById("trainingAppBtn");
-  if (TRAINING_APP_URL[catCode]) {
+  if (TRAINING_APP_URL[catCode] && dedicated) {
     trainingAppBtn.href = TRAINING_APP_URL[catCode];
     trainingAppBtn.classList.remove("hidden");
   } else {
@@ -2325,7 +2374,10 @@ function openSheet(place, catCode) {
 
   const list = document.getElementById("sceneList");
   list.innerHTML = "";
-  (SCENES[catCode] || []).forEach(scene => {
+  if (!dedicated) {
+    list.innerHTML = `<div class="scene-empty">이 시설의 전용 다국어 대화 예시는 아직 준비되어 있지 않습니다.<br>정보 탭에서 주소와 전화번호를 확인해 주십시오.</div>`;
+  }
+  (dedicated ? (SCENES[catCode] || []) : []).forEach(scene => {
     const item = document.createElement("div");
     item.className = "scene-item";
     item.innerHTML = `
