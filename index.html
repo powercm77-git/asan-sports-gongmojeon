@@ -1787,6 +1787,289 @@ const SCENES = {
       ]
     }
   ],
+
+  // 아래부터는 체육시설(SPT)·교통시설(TRN)·관광시설(AT4) 중 위 전용 시나리오의 대상이 아닌
+  // 나머지 시설을 위한 "성격별 공통 대화"다(2026-09-19). 요금·시간처럼 시설마다 실제 값이
+  // 다른 정보는 숫자를 지어내지 않고 "안내데스크에서 확인"으로 유도했다. getScenesFor()가
+  // place_name으로 이 중 어느 걸 쓸지 고른다.
+
+  // 체육관·문화센터형(다목적 체육시설) — 아산시민체육관·둔포국민체육센터·배방공수스포츠센터·
+  // 아산시 배방북수스포츠센터·아산건강문화센터·아산장애인국민체육센터 6곳에 공통으로 쓴다.
+  SPT_GYM: [
+    {
+      titleKo: "운영시간을 물어볼 때",
+      titleEn: "Asking operating hours",
+      lines: [
+        { who: "customer", en: "What time do you open and close?", pron: "왓 타임 두 유 오픈 앤 클로즈?", ko: "몇 시에 열고 몇 시에 닫나요?" },
+        { who: "clerk", en: "Please check the schedule posted at the front desk.", pron: "플리즈 첵 더 스케줄 포스티드 앳 더 프런트 데스크.", ko: "안내데스크에 붙어 있는 시간표를 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "이용료를 물어볼 때",
+      titleEn: "Asking about the fee",
+      lines: [
+        { who: "customer", en: "How much does it cost to use this?", pron: "하우 머치 더즈 잇 코스트 투 유즈 디스?", ko: "이용료가 얼마인가요?" },
+        { who: "clerk", en: "Please check the current fee at the front desk.", pron: "플리즈 첵 더 커런트 피 앳 더 프런트 데스크.", ko: "정확한 요금은 안내데스크에서 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "프로그램 신청을 문의할 때",
+      titleEn: "Asking about signing up for a program",
+      lines: [
+        { who: "customer", en: "How do I sign up for a class here?", pron: "하우 두 아이 사인 업 포 어 클래스 히어?", ko: "여기 강좌는 어떻게 신청하나요?" },
+        { who: "clerk", en: "You can apply at the front desk or online.", pron: "유 캔 어플라이 앳 더 프런트 데스크 오어 온라인.", ko: "안내데스크나 온라인으로 신청하실 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "탈의실·샤워실 위치를 물어볼 때",
+      titleEn: "Asking where the locker room is",
+      lines: [
+        { who: "customer", en: "Where is the locker room?", pron: "웨어 이즈 더 라커 룸?", ko: "탈의실이 어디인가요?" },
+        { who: "clerk", en: "It's right next to the entrance.", pron: "잇츠 라잇 넥스트 투 디 엔트런스.", ko: "입구 바로 옆에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "주차장을 물어볼 때",
+      titleEn: "Asking about parking",
+      lines: [
+        { who: "customer", en: "Is there a parking lot here?", pron: "이즈 데어 어 파킹 랏 히어?", ko: "여기 주차장 있나요?" },
+        { who: "clerk", en: "Yes, right in front of the building.", pron: "예스, 라잇 인 프런트 오브 더 빌딩.", ko: "네, 건물 바로 앞에 있습니다." }
+      ]
+    }
+  ],
+
+  // 수영장형 — 아산배미수영장.
+  SPT_POOL: [
+    {
+      titleKo: "운영시간을 물어볼 때",
+      titleEn: "Asking operating hours",
+      lines: [
+        { who: "customer", en: "What are the pool's operating hours?", pron: "왓 아 더 풀즈 아퍼레이팅 아워즈?", ko: "수영장 운영시간이 어떻게 되나요?" },
+        { who: "clerk", en: "Please check the schedule posted at the front desk.", pron: "플리즈 첵 더 스케줄 포스티드 앳 더 프런트 데스크.", ko: "안내데스크에 붙어 있는 시간표를 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "자유수영과 강습을 구분할 때",
+      titleEn: "Asking about free swim vs. lessons",
+      lines: [
+        { who: "customer", en: "Is this open swim, or a lesson time?", pron: "이즈 디스 오픈 스윔, 오어 어 레슨 타임?", ko: "지금은 자유수영인가요, 강습시간인가요?" },
+        { who: "clerk", en: "Right now it's open swim.", pron: "라잇 나우 잇츠 오픈 스윔.", ko: "지금은 자유수영 시간입니다." }
+      ]
+    },
+    {
+      titleKo: "준비물을 물어볼 때",
+      titleEn: "Asking what to bring",
+      lines: [
+        { who: "customer", en: "Do I need to bring a swim cap?", pron: "두 아이 니드 투 브링 어 스윔 캡?", ko: "수영모를 꼭 가져와야 하나요?" },
+        { who: "clerk", en: "Yes, a swim cap is required in the pool.", pron: "예스, 어 스윔 캡 이즈 리콰이어드 인 더 풀.", ko: "네, 수영장 내에서는 수영모 착용이 필수입니다." }
+      ]
+    },
+    {
+      titleKo: "샤워실·탈의실 위치를 물어볼 때",
+      titleEn: "Asking where the shower room is",
+      lines: [
+        { who: "customer", en: "Where is the shower room?", pron: "웨어 이즈 더 샤워 룸?", ko: "샤워실이 어디인가요?" },
+        { who: "clerk", en: "It's right next to the pool entrance.", pron: "잇츠 라잇 넥스트 투 더 풀 엔트런스.", ko: "수영장 입구 바로 옆에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "이용료를 물어볼 때",
+      titleEn: "Asking about the fee",
+      lines: [
+        { who: "customer", en: "How much is the entry fee?", pron: "하우 머치 이즈 디 엔트리 피?", ko: "입장료가 얼마인가요?" },
+        { who: "clerk", en: "Please check the current fee at the front desk.", pron: "플리즈 첵 더 커런트 피 앳 더 프런트 데스크.", ko: "정확한 요금은 안내데스크에서 확인해 주세요." }
+      ]
+    }
+  ],
+
+  // 야외 경기장·운동장형 — 이순신종합운동장.
+  SPT_STADIUM: [
+    {
+      titleKo: "경기장 대관을 문의할 때",
+      titleEn: "Asking about renting the field",
+      lines: [
+        { who: "customer", en: "How do I book this field for a match?", pron: "하우 두 아이 북 디스 필드 포 어 매치?", ko: "경기하려고 하는데 대관은 어떻게 하나요?" },
+        { who: "clerk", en: "Please apply at the management office in advance.", pron: "플리즈 어플라이 앳 더 매니지먼트 오피스 인 어드밴스.", ko: "시설관리사무실에 미리 신청해 주세요." }
+      ]
+    },
+    {
+      titleKo: "관람이 가능한지 물어볼 때",
+      titleEn: "Asking if spectators are allowed",
+      lines: [
+        { who: "customer", en: "Can I watch the game from the stands?", pron: "캔 아이 워치 더 게임 프롬 더 스탠즈?", ko: "관중석에서 경기를 볼 수 있나요?" },
+        { who: "clerk", en: "Yes, the stands are open to everyone.", pron: "예스, 더 스탠즈 아 오픈 투 에브리원.", ko: "네, 관중석은 누구나 이용할 수 있습니다." }
+      ]
+    },
+    {
+      titleKo: "주차장을 물어볼 때",
+      titleEn: "Asking about parking",
+      lines: [
+        { who: "customer", en: "Where can I park?", pron: "웨어 캔 아이 파크?", ko: "주차는 어디에 하면 되나요?" },
+        { who: "clerk", en: "There are several parking lots around the stadium.", pron: "데어 아 세버럴 파킹 랏츠 어라운드 더 스타디움.", ko: "운동장 주변에 주차장이 여러 곳 있습니다." }
+      ]
+    },
+    {
+      titleKo: "매점 위치를 물어볼 때",
+      titleEn: "Asking where to buy snacks",
+      lines: [
+        { who: "customer", en: "Is there a place to buy snacks or drinks?", pron: "이즈 데어 어 플레이스 투 바이 스낵스 오어 드링크스?", ko: "간식이나 음료를 살 수 있는 곳이 있나요?" },
+        { who: "clerk", en: "There's a convenience store near the entrance.", pron: "데어즈 어 컨비니언스 스토어 니어 디 엔트런스.", ko: "입구 근처에 편의점이 있습니다." }
+      ]
+    }
+  ],
+
+  // 야구장형 — 한마음야구장 아산국민체육센터.
+  SPT_BASEBALL: [
+    {
+      titleKo: "경기 일정을 물어볼 때",
+      titleEn: "Asking about the game schedule",
+      lines: [
+        { who: "customer", en: "Is there a game scheduled today?", pron: "이즈 데어 어 게임 스케쥴드 투데이?", ko: "오늘 경기 일정이 있나요?" },
+        { who: "clerk", en: "Please check the schedule posted at the entrance.", pron: "플리즈 첵 더 스케줄 포스티드 앳 디 엔트런스.", ko: "입구에 붙어 있는 일정표를 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "경기장 대관을 문의할 때",
+      titleEn: "Asking about renting the field",
+      lines: [
+        { who: "customer", en: "How do I book this field for my team?", pron: "하우 두 아이 북 디스 필드 포 마이 팀?", ko: "저희 팀이 쓰려면 대관은 어떻게 하나요?" },
+        { who: "clerk", en: "Please apply at the management office in advance.", pron: "플리즈 어플라이 앳 더 매니지먼트 오피스 인 어드밴스.", ko: "시설관리사무실에 미리 신청해 주세요." }
+      ]
+    },
+    {
+      titleKo: "관람석 위치를 물어볼 때",
+      titleEn: "Asking where the stands are",
+      lines: [
+        { who: "customer", en: "Where can I sit to watch the game?", pron: "웨어 캔 아이 싯 투 워치 더 게임?", ko: "경기는 어디서 볼 수 있나요?" },
+        { who: "clerk", en: "The stands are right behind home plate.", pron: "더 스탠즈 아 라잇 비하인드 홈 플레이트.", ko: "홈 플레이트 바로 뒤쪽이 관중석입니다." }
+      ]
+    },
+    {
+      titleKo: "매점 위치를 물어볼 때",
+      titleEn: "Asking where to buy snacks",
+      lines: [
+        { who: "customer", en: "Is there a place to buy snacks or drinks?", pron: "이즈 데어 어 플레이스 투 바이 스낵스 오어 드링크스?", ko: "간식이나 음료를 살 수 있는 곳이 있나요?" },
+        { who: "clerk", en: "There's a convenience store near the entrance.", pron: "데어즈 어 컨비니언스 스토어 니어 디 엔트런스.", ko: "입구 근처에 편의점이 있습니다." }
+      ]
+    }
+  ],
+
+  // 버스터미널형 — 아산고속버스터미널·아산시외버스터미널. 위 TRN(기차역)과 구조를 맞췄다.
+  TRN_BUS: [
+    {
+      titleKo: "승차권을 구매할 때",
+      titleEn: "Buying a bus ticket",
+      lines: [
+        { who: "customer", en: "One ticket to Seoul, please.", pron: "원 티켓 투 서울, 플리즈.", ko: "서울 가는 표 한 장 주세요." },
+        { who: "clerk", en: "Sure, please check the ticket window for the next departure.", pron: "슈어, 플리즈 첵 더 티켓 윈도우 포 더 넥스트 디파처.", ko: "네, 다음 출발 시간은 매표창구에서 확인해 드릴게요." }
+      ]
+    },
+    {
+      titleKo: "승차홈을 물어볼 때",
+      titleEn: "Asking which platform to use",
+      lines: [
+        { who: "customer", en: "Which platform does the Seoul bus leave from?", pron: "위치 플랫폼 더즈 더 서울 버스 리브 프롬?", ko: "서울 가는 버스는 몇 번 승차홈인가요?" },
+        { who: "clerk", en: "Please check the departure board over there.", pron: "플리즈 첵 더 디파처 보드 오버 데어.", ko: "저쪽 출발 안내판에서 확인하실 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "환승 방법을 물어볼 때",
+      titleEn: "Asking how to transfer",
+      lines: [
+        { who: "customer", en: "How do I transfer to another bus from here?", pron: "하우 두 아이 트랜스퍼 투 어나더 버스 프롬 히어?", ko: "여기서 다른 버스로 환승하려면 어떻게 하나요?" },
+        { who: "clerk", en: "Please ask at the information desk for the transfer route.", pron: "플리즈 애스크 앳 디 인포메이션 데스크 포 더 트랜스퍼 루트.", ko: "환승 경로는 안내소에서 문의해 주세요." }
+      ]
+    },
+    {
+      titleKo: "분실물을 문의할 때",
+      titleEn: "Asking about a lost item",
+      lines: [
+        { who: "customer", en: "I think I left my bag on the bus. What should I do?", pron: "아이 씽크 아이 레프트 마이 백 온 더 버스. 왓 슈다이 두?", ko: "버스에 가방을 두고 내린 것 같아요. 어떻게 해야 하나요?" },
+        { who: "clerk", en: "Please fill out this lost and found form.", pron: "플리즈 필 아웃 디스 로스트 앤 파운드 폼.", ko: "이 분실물 신고서를 작성해 주세요." }
+      ]
+    },
+    {
+      titleKo: "매표소 위치를 물어볼 때",
+      titleEn: "Asking where the ticket office is",
+      lines: [
+        { who: "customer", en: "Where is the ticket office?", pron: "웨어 이즈 더 티켓 오피스?", ko: "매표소가 어디인가요?" },
+        { who: "clerk", en: "It's right past the main entrance.", pron: "잇츠 라잇 파스트 더 메인 엔트런스.", ko: "정문 지나서 바로 있습니다." }
+      ]
+    }
+  ],
+
+  // 온천·찜질·족욕형 관광시설 — 온양온천·온양온천랜드·온양온천역 족욕체험장·신천온천탕.
+  AT4_SPA: [
+    {
+      titleKo: "운영시간을 물어볼 때",
+      titleEn: "Asking operating hours",
+      lines: [
+        { who: "customer", en: "What time do you open and close?", pron: "왓 타임 두 유 오픈 앤 클로즈?", ko: "몇 시에 열고 몇 시에 닫나요?" },
+        { who: "clerk", en: "Please check the schedule posted at the entrance.", pron: "플리즈 첵 더 스케줄 포스티드 앳 디 엔트런스.", ko: "입구에 붙어 있는 운영시간을 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "이용료를 물어볼 때",
+      titleEn: "Asking about the fee",
+      lines: [
+        { who: "customer", en: "How much does it cost to get in?", pron: "하우 머치 더즈 잇 코스트 투 겟 인?", ko: "입장료가 얼마인가요?" },
+        { who: "clerk", en: "Please check the current fee at the front desk.", pron: "플리즈 첵 더 커런트 피 앳 더 프런트 데스크.", ko: "정확한 요금은 안내데스크에서 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "준비물을 물어볼 때",
+      titleEn: "Asking what to bring",
+      lines: [
+        { who: "customer", en: "Do I need to bring my own towel?", pron: "두 아이 니드 투 브링 마이 오운 타월?", ko: "수건은 직접 가져와야 하나요?" },
+        { who: "clerk", en: "You can rent one at the front desk if needed.", pron: "유 캔 렌트 원 앳 더 프런트 데스크 이프 니디드.", ko: "필요하시면 안내데스크에서 대여하실 수 있어요." }
+      ]
+    },
+    {
+      titleKo: "찾아가는 길을 물어볼 때",
+      titleEn: "Asking for directions",
+      lines: [
+        { who: "customer", en: "How do I get there from the station?", pron: "하우 두 아이 겟 데어 프롬 더 스테이션?", ko: "역에서 여기까지 어떻게 가나요?" },
+        { who: "clerk", en: "It's about a 10-minute walk from the station.", pron: "잇츠 어바웃 어 텐-미닛 워크 프롬 더 스테이션.", ko: "역에서 걸어서 10분 정도 거리입니다." }
+      ]
+    }
+  ],
+
+  // 공원·산책로형 관광시설 — 신정호관광단지·신정호·신정호지방정원 키즈가든·아산그린타워·
+  // 온궁로문화의거리처럼 관리 주체가 있는 공원형 시설에 쓴다.
+  AT4_PARK: [
+    {
+      titleKo: "개방시간을 물어볼 때",
+      titleEn: "Asking about opening hours",
+      lines: [
+        { who: "customer", en: "Is this park open all day?", pron: "이즈 디스 파크 오픈 올 데이?", ko: "이 공원은 하루 종일 개방하나요?" },
+        { who: "clerk", en: "Please check the hours posted at the entrance.", pron: "플리즈 첵 디 아워즈 포스티드 앳 디 엔트런스.", ko: "입구에 붙어 있는 개방시간을 확인해 주세요." }
+      ]
+    },
+    {
+      titleKo: "주차장을 물어볼 때",
+      titleEn: "Asking about parking",
+      lines: [
+        { who: "customer", en: "Is there a parking lot nearby?", pron: "이즈 데어 어 파킹 랏 니어바이?", ko: "근처에 주차장이 있나요?" },
+        { who: "clerk", en: "Yes, there's a public parking lot close by.", pron: "예스, 데얼즈 어 퍼블릭 파킹 랏 클로즈 바이.", ko: "네, 가까운 곳에 공영주차장이 있습니다." }
+      ]
+    },
+    {
+      titleKo: "화장실 위치를 물어볼 때",
+      titleEn: "Asking where the restroom is",
+      lines: [
+        { who: "customer", en: "Is there a restroom around here?", pron: "이즈 데어 어 레스트룸 어라운드 히어?", ko: "이 근처에 화장실이 있나요?" },
+        { who: "clerk", en: "Yes, there's one near the main entrance.", pron: "예스, 데얼즈 원 니어 더 메인 엔트런스.", ko: "네, 정문 근처에 있습니다." }
+      ]
+    },
+    {
+      titleKo: "산책로를 물어볼 때",
+      titleEn: "Asking about the walking trail",
+      lines: [
+        { who: "customer", en: "Is there a walking trail around the lake?", pron: "이즈 데어 어 워킹 트레일 어라운드 더 레이크?", ko: "호수를 따라 걷는 산책로가 있나요?" },
+        { who: "clerk", en: "Yes, it takes about 40 minutes to walk around.", pron: "예스, 잇 테익스 어바웃 포티 미닛츠 투 워크 어라운드.", ko: "네, 한 바퀴 도는 데 40분 정도 걸립니다." }
+      ]
+    }
+  ],
 };
 
 const CATEGORY_LABEL = { SPT: "체육시설", HLC: "보건소", GOV: "행정복지센터", FAM: "아산가족센터", CT1: "문화시설", LIB: "도서관", SCI: "과학관·곤충원", YTH: "청소년문화센터", JOB: "여성새일센터", CHD: "육아종합지원센터", AGR: "농업기술센터", EDU: "평생학습관", AT4: "관광시설", HP8: "병원", PM9: "약국", TRN: "교통시설" };
@@ -2322,19 +2605,41 @@ function speakEnglish(text) {
   speechSynthesis.speak(utter);
 }
 
-// SCENES는 카테고리 코드 하나로만 묶여 있는데, 체육시설·교통시설처럼 한 카테고리 안에
-// 서로 다른 종류의 시설이 섞여 있으면 실제로는 그중 하나만을 위해 쓴 대화(그 시설에만 있는
-// 탁구장·빙상장, 기차역에만 있는 승강장 등)가 나머지 시설에도 그대로 떠 버린다. 대화 내용이
-// 그 시설의 실제 구조를 전제로 쓰여 다른 시설엔 맞지 않는 카테고리만, place_name으로 실제
-// 대상 시설이 맞는지 가려낸다(2026-09-19, 사용자가 한마음야구장에서 복합스포츠센터 대화가
-// 뜨는 것을 지적해 발견).
-function hasDedicatedScenes(catCode, place) {
-  if (catCode === "SPT") return place.place_name.includes("복합스포츠센터");
-  if (catCode === "TRN") return place.place_name.includes("역");
-  // 관광시설 대화는 현충사·외암민속마을 이름을 직접 언급하며 쓰여 있어, 온양온천 등
-  // 나머지 관광지에는 맞지 않는다.
-  if (catCode === "AT4") return place.place_name.includes("현충사") || place.place_name.includes("외암");
-  return true;
+// SCENES는 원래 카테고리 코드 하나로만 묶여 있었는데, 체육시설·교통시설·관광시설처럼 한
+// 카테고리 안에 서로 다른 종류의 시설이 섞여 있으면 그중 하나만을 위해 쓴 대화(복합스포츠
+// 센터의 탁구장·빙상장, 기차역의 승강장, 현충사·외암민속마을 이름 등)가 나머지 시설에도
+// 그대로 떠 버렸다(2026-09-19, 사용자가 한마음야구장에서 복합스포츠센터 대화가 뜨는 것을
+// 지적해 발견). place_name으로 실제 시설을 가려서, 전용 시나리오가 있으면 그걸, 없으면
+// 같은 성격의 시설끼리 공통으로 쓸 수 있는 시나리오를(SPT_GYM·TRN_BUS·AT4_SPA 등, 요금·
+// 시간처럼 시설마다 다른 값은 숫자를 지어내지 않고 "안내데스크에서 확인"으로 유도해서 썼다)
+// 반환한다. 직원이 없는 산·계곡·둘레길처럼 어느 쪽에도 맞지 않으면 null을 반환해 대화 탭에
+// "준비 중" 안내가 뜨게 한다.
+function getScenesFor(catCode, place) {
+  const name = place.place_name;
+  if (catCode === "SPT") {
+    if (name.includes("복합스포츠센터")) return SCENES.SPT;
+    if (name.includes("수영장")) return SCENES.SPT_POOL;
+    if (name.includes("야구장")) return SCENES.SPT_BASEBALL;
+    if (name.includes("종합운동장")) return SCENES.SPT_STADIUM;
+    return SCENES.SPT_GYM; // 체육관·문화센터·장애인체육센터 등 나머지 다목적 시설
+  }
+  if (catCode === "TRN") {
+    return name.includes("역") ? SCENES.TRN : SCENES.TRN_BUS;
+  }
+  if (catCode === "AT4") {
+    if (name.includes("현충사") || name.includes("외암")) return SCENES.AT4;
+    if (/온천|찜질|족욕/.test(name)) return SCENES.AT4_SPA;
+    if (/공원|정원|가든|호|관광단지|문화의거리|그린타워/.test(name)) return SCENES.AT4_PARK;
+    return null; // 산·계곡·둘레길 등 직원이 없는 자연경관은 전용 대화를 억지로 만들지 않는다.
+  }
+  return SCENES[catCode] || null;
+}
+
+// 직원 교육자료(edu/sports-center.html)는 복합스포츠센터 건물 전용 자료라, 그 시설을 볼 때만
+// 버튼을 보여준다 — 대화 예시가 있는지와는 별개 기준이다(체육관 6곳도 대화는 있지만 그
+// 자료는 복합센터 것이라 안 맞는다).
+function isTrainingTarget(catCode, place) {
+  return catCode === "SPT" && place.place_name.includes("복합스포츠센터");
 }
 
 function openSheet(place, catCode) {
@@ -2355,10 +2660,10 @@ function openSheet(place, catCode) {
     priceLinkBtn.classList.add("hidden");
   }
 
-  const dedicated = hasDedicatedScenes(catCode, place);
+  const scenes = getScenesFor(catCode, place);
 
   const trainingAppBtn = document.getElementById("trainingAppBtn");
-  if (TRAINING_APP_URL[catCode] && dedicated) {
+  if (TRAINING_APP_URL[catCode] && isTrainingTarget(catCode, place)) {
     trainingAppBtn.href = TRAINING_APP_URL[catCode];
     trainingAppBtn.classList.remove("hidden");
   } else {
@@ -2374,10 +2679,10 @@ function openSheet(place, catCode) {
 
   const list = document.getElementById("sceneList");
   list.innerHTML = "";
-  if (!dedicated) {
+  if (!scenes || !scenes.length) {
     list.innerHTML = `<div class="scene-empty">이 시설의 전용 다국어 대화 예시는 아직 준비되어 있지 않습니다.<br>정보 탭에서 주소와 전화번호를 확인해 주십시오.</div>`;
   }
-  (dedicated ? (SCENES[catCode] || []) : []).forEach(scene => {
+  (scenes || []).forEach(scene => {
     const item = document.createElement("div");
     item.className = "scene-item";
     item.innerHTML = `
