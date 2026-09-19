@@ -7,7 +7,7 @@
      발생해서(2026-08-18 사용자 제보) 번역 제안 자체를 막는다. -->
 <meta name="google" content="notranslate">
 <meta http-equiv="Content-Language" content="ko">
-<title>업종별 영어 대화 지도</title>
+<title>다(多)함께 통(通)하는 아산 — 유관기관 다국어 이용안내</title>
 <style>
   :root {
     --primary: #2E6FF2;
@@ -43,8 +43,14 @@
 
   @media (min-width: 900px) {
     .layout { max-width: none; margin: 0; height: 100vh; height: 100dvh; flex-direction: row; overflow: hidden; }
-    .sidebar { width: 380px; flex: none; height: 100%; overflow-y: auto; border-right: 1px solid var(--line); }
+    .sidebar { width: 380px; flex: none; height: 100%; overflow-y: hidden; border-right: 1px solid var(--line); }
     #map-wrap { flex: 1; height: 100%; min-height: auto; }
+  }
+  /* 헤더·카테고리 칩·툴바는 고정하고, 결과 목록만 이 안에서 스크롤한다 — 행정복지센터(17곳)처럼
+     목록이 길어져도 "주변 OOO 표시됨" 문구가 스크롤 경계에 잘리지 않는다. */
+  .sidebar-scroll { display: flex; flex-direction: column; min-height: 0; }
+  @media (min-width: 900px) {
+    .sidebar-scroll { flex: 1; overflow-y: auto; }
   }
 
   header {
@@ -74,7 +80,7 @@
     border-bottom: 1px solid var(--line);
     background: var(--card);
   }
-  .cat-row { display: flex; gap: 8px; overflow-x: auto; flex: 1; min-width: 0; }
+  .cat-row { display: flex; gap: 8px; overflow-x: auto; flex: 1; min-width: 0; scroll-snap-type: x proximity; }
   .cat-chip {
     flex: none;
     display: flex;
@@ -89,6 +95,7 @@
     color: var(--sub);
     cursor: pointer;
     white-space: nowrap;
+    scroll-snap-align: start;
   }
   .cat-chip.active { border-color: var(--primary); color: var(--primary); background: #EEF3FF; }
 
@@ -464,7 +471,7 @@
         <span class="title-left">다(多)함께 통(通)하는 아산</span>
         <span class="title-right">유관기관 다국어 이용안내</span>
       </div>
-      <div class="subtitle">지도에서 가게를 선택하면, 그 자리에서 쓸 수 있는 영어 대화가 나옵니다</div>
+      <div class="subtitle">지도에서 기관을 선택하면, 그 기관에서 바로 쓸 수 있는 다국어 대화가 나타납니다</div>
     </header>
 
     <div class="category-bar" id="categoryBar">
@@ -523,17 +530,19 @@
       </div>
     </div>
 
-    <div class="map-hint">
-      <span id="mapHintText">현재 위치 주변 체육시설을 찾고 있습니다…</span>
-      <span class="map-hint-help">· 마커 눌러 확인</span>
-    </div>
+    <div class="sidebar-scroll">
+      <div class="map-hint">
+        <span id="mapHintText">현재 위치 주변 체육시설을 찾고 있습니다…</span>
+        <span class="map-hint-help">· 마커 눌러 확인</span>
+      </div>
 
-    <div class="lib-legend hidden" id="libLegend">
-      <span><span class="legend-dot on"></span>좌석 정보 있음</span>
-      <span><span class="legend-dot off"></span>정보 없음</span>
-    </div>
+      <div class="lib-legend hidden" id="libLegend">
+        <span><span class="legend-dot on"></span>좌석 정보 있음</span>
+        <span><span class="legend-dot off"></span>정보 없음</span>
+      </div>
 
-    <div class="results-list" id="resultsList"></div>
+      <div class="results-list" id="resultsList"></div>
+    </div>
   </aside>
 
   <div id="map-wrap">
@@ -1875,10 +1884,12 @@ function initMap(center) {
   const container = document.getElementById("map");
   map = new kakao.maps.Map(container, {
     center: new kakao.maps.LatLng(center.lat, center.lng),
-    level: 4
+    level: 6
   });
+  map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
   placesService = new kakao.maps.services.Places();
   geocoder = new kakao.maps.services.Geocoder();
+  addCityHallLabel();
 
   // 카카오맵은 flex 레이아웃으로 컨테이너 높이가 늦게 확정되면 초기 크기로 굳어버린다.
   // 레이아웃이 안정된 뒤 한 번 더 relayout해서 실제 컨테이너 크기에 맞춘다.
@@ -1895,6 +1906,23 @@ function initMap(center) {
   kakao.maps.event.addListener(map, "idle", () => {
     const c = map.getCenter();
     searchNearby({ lat: c.getLat(), lng: c.getLng() }, currentCat);
+  });
+}
+
+// 아산시청 위치에 고정 라벨을 하나 띄워둔다 — 카테고리를 뭘 고르든, 위치 권한을 껐든 상관없이
+// 항상 보여서 지도에서 방향을 잡는 기준점이 되게 한다.
+function addCityHallLabel() {
+  const content = document.createElement("div");
+  content.textContent = "🏛️ 아산시청";
+  content.style.cssText =
+    "padding:3px 8px;border-radius:12px;background:#1D4ED8;color:#fff;" +
+    "font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.3);" +
+    "transform:translateY(-22px);";
+  new kakao.maps.CustomOverlay({
+    map,
+    position: new kakao.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng),
+    content,
+    yAnchor: 1
   });
 }
 
